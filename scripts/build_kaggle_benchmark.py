@@ -123,6 +123,23 @@ def register_and_run(instances, limit=None):
     a stub LLM for preview purposes.
     """
     import kaggle_benchmarks as kbench
+    from kaggle_benchmarks.actors.llms import LLMChat, LLMResponse
+
+    _STUB_JSON = json.dumps({
+        "metacog_assessment": [],
+        "critical_unknowns_ranked": [],
+        "exploratory_actions": [],
+        "final_plan": [{"kind": "wait"}],
+        "self_judgment": {
+            "robustness_score": 50,
+            "risks_identified": [],
+            "alternative_if_unknown_X": {},
+        },
+    })
+
+    class StubLLMChat(LLMChat):
+        def invoke(self, messages, system=None, **kwargs):
+            return LLMResponse(content=_STUB_JSON)
 
     @kbench.task(name="ignoranceforge_metacog")
     def ignoranceforge_task(llm, instance_id: str, prompt: str,
@@ -139,7 +156,7 @@ def register_and_run(instances, limit=None):
             f"Breakdown: {breakdown}",
         )
 
-    shared_llm = kbench.LLMChat()
+    shared_llm = StubLLMChat()
     run_records = instances if limit is None else instances[:limit]
     for rec in run_records:
         ignoranceforge_task.run(
