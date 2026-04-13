@@ -68,9 +68,3 @@ raw planning ability.
 2. **Calibration** — Brier score between stated confidences and ground-truth correctness.
 3. **Attention** — rank correlation between `critical_unknowns_ranked` and the true impact ranking (by ablation).
 4. **Executive quality** — rule-based checks on plan structure, named risks, and counterfactual alternatives.
-
-## Submission to Kaggle
-
-1. `python scripts/generate_dataset.py --n 1000` produces the benchmark JSONL.
-2. Upload `data/instances.jsonl` + `ignoranceforge/` as a Kaggle Dataset.
-3. Publish the evaluation notebook (adapt `scripts/evaluate.py`) as a Kaggle Community Benchmark. The hidden-rules field stays in the dataset but is masked from the model at eval time (enforced in `scripts/evaluate.py`).
