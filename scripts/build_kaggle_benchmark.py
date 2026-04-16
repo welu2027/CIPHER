@@ -32,20 +32,20 @@ import json
 import os
 import sys
 
-# Make the ignoranceforge package importable whether this is run locally or
+# Make the cipher package importable whether this is run locally or
 # dropped into a Kaggle notebook with the repo attached as a Dataset.
 _here = os.path.dirname(os.path.abspath(__file__))
 sys.path.insert(0, os.path.abspath(os.path.join(_here, "..")))
-# In a Kaggle notebook with the repo uploaded under /kaggle/input/ignoranceforge:
-sys.path.insert(0, "/kaggle/input/ignoranceforge")
+# In a Kaggle notebook with the repo uploaded under /kaggle/input/cipher:
+sys.path.insert(0, "/kaggle/input/cipher")
 
-from ignoranceforge.generator import Instance
-from ignoranceforge.world import (
+from cipher.generator import Instance
+from cipher.world import (
     World, State, EntityState, Rule, Trigger, Effect, Action,
 )
-from ignoranceforge.schema import validate_response
-from ignoranceforge.scorer import score_response
-from ignoranceforge import build_prompt
+from cipher.schema import validate_response
+from cipher.scorer import score_response
+from cipher import build_prompt
 
 
 # ---------------------------------------------------------------------------

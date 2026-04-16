@@ -5,11 +5,11 @@ from __future__ import annotations
 import os, sys
 sys.path.insert(0, os.path.abspath(os.path.join(os.path.dirname(__file__), "..")))
 
-from ignoranceforge import generate_instance, build_prompt, validate_response
-from ignoranceforge.simulator import run_plan
-from ignoranceforge.scorer import score_response
-from ignoranceforge.optimal import oracle_score
-from ignoranceforge.world import Action
+from cipher import generate_instance, build_prompt, validate_response
+from cipher.simulator import run_plan
+from cipher.scorer import score_response
+from cipher.optimal import oracle_score
+from cipher.world import Action
 
 
 def test_generation_is_deterministic():

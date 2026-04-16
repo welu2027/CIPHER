@@ -30,15 +30,15 @@ if os.path.exists(_env_path):
         _k, _v = _line.split("=", 1)
         os.environ.setdefault(_k.strip(), _v.strip())
 
-from ignoranceforge import generate_instance  # noqa
-from ignoranceforge.generator import Instance
-from ignoranceforge.world import (
+from cipher import generate_instance  # noqa
+from cipher.generator import Instance
+from cipher.world import (
     Action, World, State, EntityState, Rule, Trigger, Effect,
 )
-from ignoranceforge.simulator import run_plan
-from ignoranceforge.schema import validate_response
-from ignoranceforge.scorer import score_response
-from ignoranceforge.optimal import oracle_score
+from cipher.simulator import run_plan
+from cipher.schema import validate_response
+from cipher.scorer import score_response
+from cipher.optimal import oracle_score
 
 
 def _instance_from_record(rec: Dict[str, Any]) -> Instance:
@@ -155,7 +155,7 @@ def claude_agent(inst: Instance) -> Dict[str, Any]:
     in the environment and `pip install anthropic`. Model id is read from
     IF_CLAUDE_MODEL (default: claude-opus-4-6)."""
     import anthropic
-    from ignoranceforge import build_prompt
+    from cipher import build_prompt
     client = anthropic.Anthropic()
     prompt = build_prompt(inst)
     model = os.environ.get("IF_CLAUDE_MODEL", "claude-opus-4-6")
@@ -180,7 +180,7 @@ def hf_agent(inst: Instance) -> Dict[str, Any]:
     env (loaded from .env if present). Model id from HF_MODEL. Optional
     HF_PROVIDER pins a specific provider; blank => HF auto-route."""
     from huggingface_hub import InferenceClient
-    from ignoranceforge import build_prompt
+    from cipher import build_prompt
     token = os.environ["HF_TOKEN"]
     model = os.environ.get("HF_MODEL", "meta-llama/Llama-3.3-70B-Instruct")
     provider = os.environ.get("HF_PROVIDER") or "auto"
@@ -204,7 +204,7 @@ def gemini_agent(inst: Instance) -> Dict[str, Any]:
     """Real LLM agent using Google Generative AI. Requires GOOGLE_API_KEY
     and `pip install google-generativeai`. Model id from IF_GEMINI_MODEL."""
     import google.generativeai as genai
-    from ignoranceforge import build_prompt
+    from cipher import build_prompt
     genai.configure(api_key=os.environ["GOOGLE_API_KEY"])
     model = genai.GenerativeModel(os.environ.get("IF_GEMINI_MODEL", "gemini-2.5-pro"))
     resp = model.generate_content(build_prompt(inst))

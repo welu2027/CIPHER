@@ -22,9 +22,9 @@ import random
 # allow running as `python scripts/generate_dataset.py` from repo root
 sys.path.insert(0, os.path.abspath(os.path.join(os.path.dirname(__file__), "..")))
 
-from ignoranceforge import generate_instance, build_prompt
-from ignoranceforge.optimal import oracle_score
-from ignoranceforge.scorer import _worst_objective
+from cipher import generate_instance, build_prompt
+from cipher.optimal import oracle_score
+from cipher.scorer import _worst_objective
 
 
 DIFFICULTY_MIX = [("easy", 0.25), ("medium", 0.5), ("hard", 0.25)]
