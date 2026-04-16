@@ -1,4 +1,4 @@
-"""Generate a JSONL dataset of IgnoranceForge instances.
+"""Generate a JSONL dataset of CIPHER instances.
 
 Each line is a JSON object with:
   id, seed, difficulty

@@ -1,4 +1,4 @@
-"""IgnoranceForge: procedurally-generated metacognition benchmark."""
+"""CIPHER: Calibrated Introspection via Partially Hidden Environment Rules."""
 
 from .world import World, Rule, Trigger, Effect, Action
 from .generator import generate_instance, Instance

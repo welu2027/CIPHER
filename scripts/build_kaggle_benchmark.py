@@ -1,6 +1,6 @@
-"""Kaggle Benchmarks adapter for APORIA.
+"""Kaggle Benchmarks adapter for CIPHER.
 
-APORIA: A Benchmark for Epistemic Self-Awareness in Language Models
+CIPHER: Calibrated Introspection via Partially Hidden Environment Rules
 
 HOW TO USE
 ==========
@@ -13,7 +13,7 @@ HOW TO USE
    kaggle-benchmarks to auto-generate task files and run files under the
    hood. After execution, go to
    https://www.kaggle.com/benchmarks/tasks/new to finalize and publish the
-   benchmark named "aporia".
+   benchmark named "cipher".
 
 Local preview
 -------------
@@ -116,7 +116,7 @@ def _score_model_output(raw_text, rec):
 
 
 def register_and_run(instances, limit=None):
-    """Define the APORIA kbench task and run it once per instance.
+    """Define the CIPHER kbench task and run it once per instance.
 
     This MUST execute inside a Kaggle Benchmark Task notebook for the benchmark
     to be registered with Kaggle's backend. Locally, it will just score against
@@ -126,10 +126,10 @@ def register_and_run(instances, limit=None):
     from kaggle_benchmarks.actors.llms import GoogleGenAI
     from google import genai
 
-    @kbench.task(name="aporia_metacog")
-    def aporia_task(llm, instance_id: str, prompt: str,
+    @kbench.task(name="cipher_metacog")
+    def cipher_task(llm, instance_id: str, prompt: str,
                     record_json: str):
-        """A single APORIA instance. The LLM must return strict JSON per the
+        """A single CIPHER instance. The LLM must return strict JSON per the
         schema shown in the prompt. Scoring combines objective, calibration,
         attention, and executive sub-scores to measure epistemic self-awareness."""
         response = llm.prompt(prompt)
@@ -147,13 +147,13 @@ def register_and_run(instances, limit=None):
     )
     run_records = instances if limit is None else instances[:limit]
     for rec in run_records:
-        aporia_task.run(
+        cipher_task.run(
             llm=shared_llm,
             instance_id=rec["id"],
             prompt=rec["prompt"],
             record_json=json.dumps(rec),
         )
-    print(f"APORIA: registered + ran {len(run_records)} tasks.")
+    print(f"CIPHER: registered + ran {len(run_records)} tasks.")
 
 
 # ---------------------------------------------------------------------------

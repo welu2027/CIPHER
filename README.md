@@ -1,4 +1,5 @@
-# IgnoranceForge
+# CIPHER
+### Calibrated Introspection via Partially Hidden Environment Rules
 
 Procedurally-generated metacognition benchmark for the Kaggle "Measuring Progress
 Toward AGI" hackathon. Each instance is a unique micro-world with invented causal
