@@ -1,70 +1,66 @@
 # CIPHER
 ### Calibrated Introspection via Partially Hidden Environment Rules
 
-Procedurally-generated metacognition benchmark for measuring progress towards AGI. Each instance is a unique micro-world with invented causal
-rules; some rule components are withheld. The model must (1) assess its own
-knowns/unknowns with calibrated confidence, (2) prioritize which unknowns to
-probe, (3) emit exploratory actions, (4) commit to a final plan, and (5) judge
-its own robustness.
+CIPHER is a procedurally-generated benchmark designed to test whether language models actually know what they know — and what they don't. Every instance is a tiny invented world with its own causal rules, but some of those rules are deliberately hidden. The model has to figure out how much it can trust its own understanding, rank which gaps matter most, probe the system if it wants, commit to a plan, and then honestly assess how robust that plan is.
 
-A hidden Python simulator executes the plan against the full rule set and
-produces objective scores. Combined with calibration error, attention-to-
-unknowns, and executive-quality metrics, the benchmark isolates metacognition
-and executive function while being resistant to memorization (worlds are
-generated at runtime from abstract mathematical primitives — no real-world
-entities, no named concepts).
+The whole point is that no model can memorize its way through this. Every world uses made-up vocabulary — invented entity names, invented property words, invented causal language — generated fresh from abstract math. If a model scores well, it's because it genuinely reasoned under uncertainty, not because it pattern-matched on something from training.
 
-## Layout
+## What's in this dataset
 
 ```
-ignoranceforge/
-  world.py       core world state, rules, actions, engine
-  generator.py   procedural instance generator (seeded, deterministic)
-  simulator.py   runs a model plan against hidden rules, returns outcomes
-  scorer.py      multi-dimensional scoring
-  schema.py      JSON schema + validator for model outputs
-  prompt.py      builds the natural-language prompt presented to the model
-  optimal.py     beam-search oracle for normalized objective scores
+cipher/
+  __init__.py
+  world.py          state representation, rules, action engine
+  generator.py      procedural instance generator (seeded, fully deterministic)
+  simulator.py      executes a model's plan against the hidden rules
+  scorer.py         computes all four scoring dimensions
+  schema.py         validates and parses model JSON output
+  prompt.py         builds the natural-language prompt for each instance
+  flavor.py         procedural vocabulary layer (invented terms per instance)
+  optimal.py        beam-search oracle for computing normalized scores
+data/
+  instances.jsonl   1,000 pre-generated instances (seed=2026, with oracle bounds)
 scripts/
-  generate_dataset.py
-  evaluate.py
-examples/
-  example_instance.json
-tests/
-  test_basic.py
+  generate_dataset.py   regenerate the benchmark at any seed/size
 ```
 
-## Quick start
+The `data/instances.jsonl` file has everything needed to run evaluations without regenerating. Each line is one instance with a `prompt` field (what the model sees) and a `hidden` field (ground truth used for scoring — not shown to the model).
 
-```
-# (1) Generate the benchmark (1000 instances with oracle bounds, ~40s)
+## How scoring works
+
+Each model response is scored on four dimensions, all normalized to [0, 1]:
+
+| Dimension | Weight | What it's measuring |
+|-----------|--------|---------------------|
+| **Objective** | 35% | How good is the final plan vs. the oracle beam search? |
+| **Calibration** | 25% | Brier score on the model's stated confidence in its own knowledge |
+| **Attention** | 20% | Does the model rank the important unknowns above the unimportant ones? |
+| **Executive** | 20% | Plan structure: named risks, alternative plans, probe strategy |
+
+The composite is a weighted average. One thing worth noting: no simple strategy wins all four dimensions at once. A model that always plans greedily gets a great objective score but zero attention and poor calibration. A model that hedges everywhere gets decent calibration but a bad objective. A model that genuinely reasons about what it doesn't know — and acts accordingly — is the one that scores well across the board.
+
+## Baseline scores (1,000 instances, seed=2026)
+
+| agent | composite | objective | calibration | attention | executive |
+|-------|-----------|-----------|-------------|-----------|-----------|
+| stub-noop | 0.408 | 0.486 | 0.750 | 0.000 | 0.250 |
+| stub-random | 0.511 | 0.484 | 0.663 | 0.211 | 0.670 |
+| stub-greedy | 0.623 | 1.000 | 0.893 | 0.000 | 0.250 |
+
+These are floor/ceiling references, not targets. The greedy stub scores 1.0 on objective because it runs beam search on the visible rules — but it claims everything is known with high confidence and never identifies the unknowns that actually matter, so its calibration and attention are poor. Real models should do meaningfully better on the composite.
+
+## Regenerating the dataset
+
+The included `data/instances.jsonl` is ready to use, but if you want to regenerate it at a different seed or size:
+
+```bash
 python3 scripts/generate_dataset.py --n 1000 --out data/instances.jsonl --seed 2026 --oracle
-
-# (2) Sanity-check with stub baselines
-python3 scripts/evaluate.py --data data/instances.jsonl --model stub-noop   --out results_noop.json
-python3 scripts/evaluate.py --data data/instances.jsonl --model stub-random --out results_random.json
-python3 scripts/evaluate.py --data data/instances.jsonl --model stub-greedy --out results_greedy.json
-
-# (3) Evaluate a real LLM
-export ANTHROPIC_API_KEY=...
-python3 scripts/evaluate.py --data data/instances.jsonl --model claude --out results_claude.json
 ```
 
-Baseline scores on the shipped 1000-instance dataset (seed=2026):
+The `--oracle` flag pre-computes the best and worst achievable objectives for each instance (used to normalize scores). It adds ~40s for 1,000 instances.
 
-| agent        | composite | objective | calibration | attention | executive |
-|--------------|-----------|-----------|-------------|-----------|-----------|
-| stub-noop    | 0.408     | 0.486     | 0.750       | 0.000     | 0.250     |
-| stub-random  | 0.511     | 0.484     | 0.663       | 0.211     | 0.670     |
-| stub-greedy  | 0.623     | 1.000     | 0.893       | 0.000     | 0.250     |
+## Kaggle Benchmark
 
-The gradient across sub-scores is the point: no single stub wins every axis,
-so the benchmark really does measure metacognition/attention separately from
-raw planning ability.
+This dataset is the backing store for the CIPHER Kaggle Benchmark, which evaluates frontier LLMs — Gemini, Claude, GPT-4o, and open-source models — against these instances. The benchmark notebook attaches this dataset, loads `instances.jsonl`, and runs each model through `cipher_task` via the `kaggle-benchmarks` SDK.
 
-## Scoring dimensions
-
-1. **Objective** — final-plan outcome vs oracle beam search on full rules, normalized to [0,1].
-2. **Calibration** — Brier score between stated confidences and ground-truth correctness.
-3. **Attention** — rank correlation between `critical_unknowns_ranked` and the true impact ranking (by ablation).
-4. **Executive quality** — rule-based checks on plan structure, named risks, and counterfactual alternatives.
+The benchmark is part of the Measuring Progress Toward AGI hackathon, targeting the **Metacognition** track.
