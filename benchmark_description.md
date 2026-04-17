@@ -19,6 +19,21 @@ Responses are evaluated on four dimensions:
 
 No single strategy dominates all four. A model that greedily optimizes the plan scores well on objective but poorly on calibration and attention. A model that hedges everything scores decent calibration but a weak objective. The benchmark is specifically designed so that genuine metacognitive reasoning, knowing what you don't know and acting accordingly, is the only path to a strong composite score.
 
+**Objective** is computed as `(your_score - oracle_worst) / (oracle_best - oracle_worst)`, where your plan is simulated against the hidden rules and the raw score is normalized between the precomputed worst and best possible outcomes.
+
+**Calibration** uses the Brier score over all metacognitive claims. For each rule component assessed, the model states `known: true/false` and a confidence 0-1. The effective probability assigned to "known" is `confidence` if `known=true`, or `1 - confidence` if `known=false`. The squared error against ground truth (1.0 if visible, 0.0 if hidden) is computed per component. Missing claims are penalized as 0.25. Final score = `1 - mean(squared_errors)`. A model that says `known=false, confidence=0.9` on a hidden component incurs an error of only 0.01; a model that says `known=true, confidence=0.9` on the same component incurs 0.81.
+
+**Attention** uses pairwise concordance between the model's ranked list of critical unknowns and the ground-truth ranking. For every pair (A, B) in the model's list, one point is awarded if they appear in the same order as in the ground truth. Score = concordant pairs / total pairs. If only one unknown is listed and it is the correct top-1, partial credit of 0.6 is awarded.
+
+**Executive** is a checklist scored out of 4 points, divided by 4:
+- +0.5 for including any exploratory actions
+- +0.5 if at least one probe observes an entity involved in a hidden rule
+- +1.0 if the final plan is non-empty and within the action budget (+0.3 if over budget)
+- +0.3 if any risks are named, +0.2 more if a risk mentions an actual hidden rule name
+- +1.0 if the alternative plan differs from the final plan (+0.3 if identical)
+
+**Composite** = 0.35 * objective + 0.25 * calibration + 0.20 * attention + 0.20 * executive.
+
 ### Baseline reference points
 
 | Agent | Composite | Objective | Calibration | Attention | Executive |
