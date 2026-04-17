@@ -27,4 +27,8 @@ No single strategy dominates all four. A model that greedily optimizes the plan 
 | stub-random | 0.511 | 0.484 | 0.663 | 0.211 | 0.670 |
 | stub-greedy | 0.623 | 1.000 | 0.893 | 0.000 | 0.250 |
 
-The greedy stub runs oracle beam search on the visible rules, and it achieves a perfect objective score but never identifies what it doesn't know, so calibration and attention collapse. Real models should beat the composite meaningfully, and the interesting question is *how* they beat it.
+The greedy stub runs oracle beam search on the visible rules, and it achieves a perfect objective score but never identifies what it doesn't know, so calibration and attention collapse.
+
+### Early results
+
+Frontier models evaluated so far score between 0.53 and 0.61 composite — clustering just below the greedy stub baseline of 0.623. This means current models are not meaningfully beating a simple oracle that ignores all metacognition. They produce reasonable plans but fail to accurately assess what they know, identify which gaps matter, or structure their uncertainty. The benchmark is doing its job: exposing a genuine blind spot in current frontier systems.
