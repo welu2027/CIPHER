@@ -22,33 +22,38 @@ def test_generation_is_deterministic():
 def test_prompt_contains_entities_and_rules():
     inst = generate_instance(seed=7, difficulty="easy")
     p = build_prompt(inst)
-    # flavored prompt always mentions entity 0 via its flavor prefix letter
-    assert "0:" in p or "0 (" in p
-    assert "[R0]" in p  # canonical rule name still exposed for scoring
-    # at least one redaction marker appears for any instance (easy n_hidden=1)
-    assert "?" in p
+    # Entities always use E-prefix regardless of flavor noun
+    assert "E0" in p
+    # Hidden laws use H-prefix placeholders, no ? markers
+    assert "H0" in p
+    assert "?" not in p.split("Objective")[0]
+    # Visible rules are labeled with their canonical names
+    for idx in inst.visible_rule_indices:
+        assert f"[R{idx}]" in p
 
 
 def test_end_to_end_scoring():
     inst = generate_instance(seed=99, difficulty="easy")
     best, best_plan = oracle_score(inst.world)
-    # feed the oracle plan back as the model response and expect near-max
-    # objective sub-score.
+    # Feed correct metacognitive assessment + oracle plan; expect near-max scores.
+    # The model knows visible rules and correctly acknowledges hidden rules as unknown.
+    # critical_unknowns_ranked uses H-label format.
+    h_labels = [f"H{i}" for i in range(len(inst.hidden_rule_indices))]
     raw = {
         "metacog_assessment": [
             {"rule_name": gt["rule_name"], "component": gt["component"],
              "known": gt["true_known"],
-             "confidence": 0.95 if gt["true_known"] else 0.1}
+             "confidence": 0.95}  # high confidence either way; scorer handles direction
             for gt in inst.metacog_ground_truth
         ],
-        "critical_unknowns_ranked": list(inst.true_unknown_ranking),
+        "critical_unknowns_ranked": h_labels,
         "exploratory_actions": [],
         "final_plan": [{"kind": a.kind, "i": a.i, "j": a.j} for a in best_plan],
         "self_judgment": {
             "robustness_score": 80,
             "risks_identified": [inst.hidden_fields[0]["rule_name"]] if inst.hidden_fields else ["none"],
             "alternative_if_unknown_X": {
-                "unknown": inst.true_unknown_ranking[0] if inst.true_unknown_ranking else "",
+                "unknown": h_labels[0] if h_labels else "",
                 "plan": [{"kind": "wait"}],
             },
         },

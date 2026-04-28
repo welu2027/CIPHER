@@ -5,13 +5,18 @@ metadata used for scoring (ground-truth answers for metacognitive claims,
 impact ranking for the hidden components, etc.).
 
 Determinism: every instance is a pure function of (seed, difficulty).
+
+Hiding mechanism: hidden rules are OMITTED from the prompt entirely (not
+shown with '?' placeholders). The model is told only that N additional laws
+exist whose complete forms were not recovered. This forces genuine uncertainty
+reasoning rather than `?`-token parsing.
 """
 
 from __future__ import annotations
 
 import random
 from dataclasses import dataclass, field
-from typing import List, Tuple, Dict, Any, Literal
+from typing import List, Tuple, Dict, Any, Literal, Set
 
 from .world import (
     World, State, EntityState, Rule, Trigger, Effect, MODULUS,
@@ -26,19 +31,20 @@ class Instance:
     seed: int
     difficulty: Difficulty
     world: World
-    # rules_public: same rules as world.rules but with hidden fields masked in
-    # their string descriptions. Structurally identical (so the simulator can
-    # run), but the prompt builder will use .describe() with reveal=False on
-    # masked fields.
-    public_rule_descriptions: List[str]
-    hidden_fields: List[Dict[str, Any]]  # per-rule record of what was hidden
+    # Indices of rules that are fully visible in the prompt (0-based).
+    visible_rule_indices: List[int]
+    # Indices of rules that are completely omitted from the prompt.
+    hidden_rule_indices: List[int]
+    hidden_fields: List[Dict[str, Any]]  # per-rule record — kept for scoring compat
     # ground truth for metacog scoring: items the model should correctly
     # identify as known/unknown, with the correct label
     metacog_ground_truth: List[Dict[str, Any]]
-    # impact ranking of hidden components, most-impactful first
+    # impact ranking of hidden rules, most-impactful first (rule names)
     true_unknown_ranking: List[str]
     # the oracle objective score under the full rules (computed lazily later)
     oracle_objective: int | None = None
+    # kept for backward compat with old callers that used public_rule_descriptions
+    public_rule_descriptions: List[str] = field(default_factory=list)
 
 
 TRIGGER_KINDS = ["phase_eq", "flux_eq", "phase_gt", "flux_gt",
@@ -67,12 +73,38 @@ def _random_effect(rng: random.Random, n: int) -> Effect:
 
 
 def _diff_params(difficulty: Difficulty) -> Tuple[int, int, int]:
-    """Returns (n_entities, n_rules, n_hidden_fields)."""
+    """Returns (n_entities, n_rules, n_hidden_rules).
+
+    Hidden rules are omitted entirely from the prompt. The model is told only
+    that N additional laws exist whose forms were not recovered.
+    """
     if difficulty == "easy":
-        return 3, 3, 1
+        return 3, 4, 1   # 3 visible + 1 hidden
     if difficulty == "medium":
-        return 4, 4, 2
-    return 4, 5, 3
+        return 4, 5, 2   # 3 visible + 2 hidden
+    return 4, 6, 3       # 3 visible + 3 hidden
+
+
+def _oracle_plan(world: World, beam_width: int = 64) -> List:
+    """Return the beam-search best plan for impact ranking."""
+    from .world import all_actions
+    actions = all_actions(world.initial.n)
+    beam = [(world.initial, [], world.objective(world.initial))]
+    best_obj = world.objective(world.initial)
+    best_plan: List = []
+    for _ in range(world.horizon):
+        candidates = []
+        for state, plan, _ in beam:
+            for a in actions:
+                s2 = a.apply(state)
+                s2 = world.step(s2)
+                candidates.append((s2, plan + [a], world.objective(s2)))
+        candidates.sort(key=lambda x: -x[2])
+        beam = candidates[:beam_width]
+        if beam and beam[0][2] > best_obj:
+            best_obj = beam[0][2]
+            best_plan = beam[0][1]
+    return best_plan
 
 
 def generate_instance(seed: int, difficulty: Difficulty = "medium") -> Instance:
@@ -92,92 +124,66 @@ def generate_instance(seed: int, difficulty: Difficulty = "medium") -> Instance:
             effect=_random_effect(rng, n_entities),
         ))
 
-    # Choose which fields to hide. Each hidden slot is a (rule_index, field).
-    candidate_slots = []
-    for idx in range(n_rules):
-        candidate_slots.append((idx, "trigger_kind"))
-        candidate_slots.append((idx, "trigger_k"))
-        candidate_slots.append((idx, "effect_kind"))
-        candidate_slots.append((idx, "effect_delta"))
-    rng.shuffle(candidate_slots)
-    hidden_slots = candidate_slots[:n_hidden]
+    # Choose which RULES to hide entirely (not individual fields).
+    rule_indices = list(range(n_rules))
+    rng.shuffle(rule_indices)
+    hidden_rule_idx_set: Set[int] = set(rule_indices[:n_hidden])
+    visible_rule_indices = [i for i in range(n_rules) if i not in hidden_rule_idx_set]
+    hidden_rule_indices = [i for i in range(n_rules) if i in hidden_rule_idx_set]
 
-    # Apply hiding by replacing rules with masked-metadata versions (structure
-    # unchanged — simulator still uses full values; only .describe() hides).
-    masked_rules: List[Rule] = []
+    # Build hidden_records in the old format for scoring compat.
+    # Each hidden rule is treated as having all 4 components hidden.
     hidden_records: List[Dict[str, Any]] = []
-    for idx, rule in enumerate(rules):
-        t = rule.trigger
-        e = rule.effect
-        slot_info = {"rule_name": rule.name, "hidden": []}
-        for (h_idx, field) in hidden_slots:
-            if h_idx != idx:
-                continue
-            if field == "trigger_kind":
-                t = Trigger(**{**t.__dict__, "hidden_kind": True})
-                slot_info["hidden"].append("trigger_kind")
-            elif field == "trigger_k":
-                t = Trigger(**{**t.__dict__, "hidden_k": True})
-                slot_info["hidden"].append("trigger_k")
-            elif field == "effect_kind":
-                e = Effect(**{**e.__dict__, "hidden_kind": True})
-                slot_info["hidden"].append("effect_kind")
-            elif field == "effect_delta":
-                e = Effect(**{**e.__dict__, "hidden_delta": True})
-                slot_info["hidden"].append("effect_delta")
-        masked_rules.append(Rule(name=rule.name, trigger=t, effect=e))
-        if slot_info["hidden"]:
-            hidden_records.append(slot_info)
+    for idx in hidden_rule_indices:
+        hidden_records.append({
+            "rule_name": rules[idx].name,
+            "hidden": ["trigger_kind", "trigger_k", "effect_kind", "effect_delta"],
+        })
 
-    world = World(initial=initial, rules=tuple(masked_rules), horizon=7)
+    world = World(initial=initial, rules=tuple(rules), horizon=7)
 
-    public_descriptions = [
-        r.describe(reveal_trigger=False, reveal_effect=False) for r in masked_rules
-    ]
-
-    # Ground truth for metacog calibration. We construct a set of factual claims
-    # the model could assert; the correct confidence is 1.0 for true claims and
-    # 0.0 for false. The prompt will ask the model to rate its confidence that
-    # specific rule components are known.
+    # Ground truth for metacog calibration.
+    # Visible rules: all 4 components are known (true_known=True).
+    # Hidden rules: all 4 components are unknown (true_known=False).
     metacog_gt: List[Dict[str, Any]] = []
-    for idx, rule in enumerate(masked_rules):
-        hidden = set()
-        for rec in hidden_records:
-            if rec["rule_name"] == rule.name:
-                hidden = set(rec["hidden"])
-        # 4 claims per rule: each claim = "I know <component>"
+    for idx, rule in enumerate(rules):
+        is_hidden = idx in hidden_rule_idx_set
         for component in ["trigger_kind", "trigger_k", "effect_kind", "effect_delta"]:
             metacog_gt.append({
                 "rule_name": rule.name,
                 "component": component,
-                "true_known": component not in hidden,
+                "true_known": not is_hidden,
             })
 
-    # Impact ranking: ablate each hidden component and measure objective delta
-    # when the rule's effect is suppressed vs not. Rules whose effect matters
-    # more (higher absolute delta) rank first.
+    # Impact ranking: ablate each hidden rule and measure objective delta
+    # under the ORACLE PLAN on the full world (not a zero-action trajectory).
+    # This ensures the ranking reflects what actually matters when a good agent
+    # executes, not what matters when nothing happens.
+    oracle_plan = _oracle_plan(world)
+    baseline_obj = world.objective(world.execute(oracle_plan))
+
     impact = []
-    baseline_final = world.execute([])  # just let rules step once, no actions.
-    baseline_obj = world.objective(baseline_final)
-    for rec in hidden_records:
-        rule_name = rec["rule_name"]
-        # build world without this rule
-        reduced = tuple(r for r in masked_rules if r.name != rule_name)
-        reduced_world = World(initial=initial, rules=reduced, horizon=world.horizon)
-        reduced_final = reduced_world.execute([])
-        reduced_obj = reduced_world.objective(reduced_final)
+    for idx in hidden_rule_indices:
+        rule_name = rules[idx].name
+        # Build world without this hidden rule
+        reduced_rules = tuple(r for i, r in enumerate(rules) if i != idx)
+        reduced_world = World(initial=initial, rules=reduced_rules, horizon=world.horizon)
+        # Use the same oracle plan; its performance on the reduced world measures
+        # how much the hidden rule matters for that plan.
+        reduced_obj = reduced_world.objective(reduced_world.execute(oracle_plan))
         impact.append((rule_name, abs(baseline_obj - reduced_obj)))
     impact.sort(key=lambda x: -x[1])
-    true_ranking = [f"{name}:{','.join(rec['hidden'])}"
-                    for name, _ in impact
-                    for rec in hidden_records if rec["rule_name"] == name]
+
+    # true_unknown_ranking: list of rule names, most impactful first.
+    true_ranking = [name for name, _ in impact]
 
     return Instance(
         id=f"IF-{difficulty}-{seed:08x}",
         seed=seed,
         difficulty=difficulty,
         world=world,
-        public_rule_descriptions=public_descriptions,
+        visible_rule_indices=visible_rule_indices,
+        hidden_rule_indices=hidden_rule_indices,
         hidden_fields=hidden_records,
         metacog_ground_truth=metacog_gt,
         true_unknown_ranking=true_ranking,

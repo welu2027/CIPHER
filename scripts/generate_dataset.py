@@ -47,6 +47,8 @@ def _instance_to_record(inst, include_oracle: bool) -> dict:
         "prompt": build_prompt(inst),
         "hidden": {
             "rules": rules_full,
+            "visible_rule_indices": inst.visible_rule_indices,
+            "hidden_rule_indices": inst.hidden_rule_indices,
             "metacog_ground_truth": inst.metacog_ground_truth,
             "true_unknown_ranking": inst.true_unknown_ranking,
             "initial_state": [{"phase": e.phase, "flux": e.flux}

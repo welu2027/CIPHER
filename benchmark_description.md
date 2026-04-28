@@ -2,9 +2,9 @@
 
 Most benchmarks test whether a model knows the right answer. CIPHER tests something harder: whether a model knows what it does not know.
 
-Each instance is a procedurally generated micro-world with its own causal rules, expressed in entirely invented vocabulary: made-up entity names, made-up property words, made-up causal language. Some rules are partially hidden. The model must reason about a system it can't fully observe, decide which gaps in its knowledge matter most, and commit to a plan while honestly assessing how robust that plan actually is.
+Each instance is a procedurally generated micro-world with its own causal rules, expressed in entirely invented vocabulary: made-up entity names, made-up property words, made-up causal language. Some rules are **completely omitted** from the prompt — the model is told only that N additional laws exist whose triggers, effects, and affected entities are entirely unknown. There are no `?` placeholders to parse. The model must reason about laws it has never seen.
 
-Because every instance is generated fresh from abstract math with a random seed, memorization is impossible. A model that scores well on CIPHER will have reasoned under uncertainty, beyond pattern-matched on training data.
+Because every instance is generated fresh from abstract math with a random seed, and because no partial rule information is provided for hidden laws, memorization is impossible and syntactic shortcuts cannot substitute for genuine epistemic reasoning. A model that scores well on CIPHER has reasoned about the limits of its own knowledge, not just parsed markers of uncertainty.
 
 ### What gets scored
 
@@ -17,20 +17,15 @@ Responses are evaluated on four dimensions:
 | **Attention** | 20% | Rank correlation between model-flagged unknowns and ground-truth importance |
 | **Executive** | 20% | Structural quality: named risks, alternative plans, probe strategy |
 
-No single strategy dominates all four. A model that greedily optimizes the plan scores well on objective but poorly on calibration and attention. A model that hedges everything scores decent calibration but a weak objective. The benchmark is specifically designed so that genuine metacognitive reasoning, knowing what you don't know and acting accordingly, is the only path to a strong composite score.
+No single strategy dominates all four. A model that greedily optimizes the plan scores well on objective but is severely penalized on calibration (for claiming hidden rules are known when they are completely absent from the prompt) and scores zero on attention. A model that hedges everything scores decent calibration but a weak objective. The benchmark is specifically designed so that genuine metacognitive reasoning — knowing what you don't know and acting accordingly — is the only path to a strong composite score.
 
-**Objective** is computed as `(your_score - oracle_worst) / (oracle_best - oracle_worst)`, where your plan is simulated against the hidden rules and the raw score is normalized between the precomputed worst and best possible outcomes.
+**Objective** is computed as `(your_score - oracle_worst) / (oracle_best - oracle_worst)`, where your plan is simulated against the full hidden rules and the raw score is normalized between the precomputed worst and best possible outcomes.
 
-**Calibration** uses the Brier score over all metacognitive claims. For each rule component assessed, the model states `known: true/false` and a confidence 0-1. The effective probability assigned to "known" is `confidence` if `known=true`, or `1 - confidence` if `known=false`. The squared error against ground truth (1.0 if visible, 0.0 if hidden) is computed per component. Missing claims are penalized as 0.25. Final score = `1 - mean(squared_errors)`. A model that says `known=false, confidence=0.9` on a hidden component incurs an error of only 0.01; a model that says `known=true, confidence=0.9` on the same component incurs 0.81.
+**Calibration** uses the Brier score over all metacognitive claims. For each (rule, component) pair, the model states `known: true/false` and a confidence 0-1. The effective probability assigned to "known" is `confidence` if `known=true`, or `1 - confidence` if `known=false`. The squared error against ground truth (1.0 if visible, 0.0 if hidden) is computed per component. Missing claims are penalized as 0.25. Final score = `1 - mean(squared_errors)`. Since hidden rules are completely omitted, not just masked, a model cannot parse `?` tokens to detect which components to hedge on — it must reason about structural unknowns.
 
-**Attention** uses pairwise concordance between the model's ranked list of critical unknowns and the ground-truth ranking. For every pair (A, B) in the model's list, one point is awarded if they appear in the same order as in the ground truth. Score = concordant pairs / total pairs. If only one unknown is listed and it is the correct top-1, partial credit of 0.6 is awarded.
+**Attention** uses pairwise concordance between the model's ranked list of hidden laws (H0, H1, ...) and the ground-truth impact ranking. The ground-truth ranking is computed by ablating each hidden rule from the oracle beam-search trajectory — not a zero-action baseline — so the ranking reflects which rules matter when a good agent actually executes a plan. Score = concordant pairs / total pairs. If only one hidden law is listed and it is the correct top-1, partial credit of 0.6 is awarded.
 
-**Executive** is a checklist scored out of 4 points, divided by 4:
-- +0.5 for including any exploratory actions
-- +0.5 if at least one probe observes an entity involved in a hidden rule
-- +1.0 if the final plan is non-empty and within the action budget (+0.3 if over budget)
-- +0.3 if any risks are named, +0.2 more if a risk mentions an actual hidden rule name
-- +1.0 if the alternative plan differs from the final plan (+0.3 if identical)
+**Executive** is simulation-based: the model provides an alternative plan intended to perform better if hidden laws are adversarial. We construct an adversarial world where each hidden rule's effect is replaced by a worst-case zero_flux operation, execute both the final plan and the alternative plan on that adversarial world, and score based on how much the alternative plan actually outperforms. This makes the executive score verification-grounded: format compliance does not matter, only whether the alternative provides genuine robustness.
 
 **Composite** = 0.35 * objective + 0.25 * calibration + 0.20 * attention + 0.20 * executive.
 
@@ -38,53 +33,40 @@ No single strategy dominates all four. A model that greedily optimizes the plan 
 
 | Agent | Composite | Objective | Calibration | Attention | Executive |
 |-------|-----------|-----------|-------------|-----------|-----------|
-| stub-noop | 0.408 | 0.486 | 0.750 | 0.000 | 0.250 |
-| stub-random | 0.511 | 0.484 | 0.663 | 0.211 | 0.670 |
-| stub-greedy | 0.623 | 1.000 | 0.893 | 0.000 | 0.250 |
+| stub-noop | 0.356 | 0.481 | 0.750 | 0.000 | 0.000 |
+| stub-random | 0.543 | 0.479 | 0.677 | 0.593 | 0.438 |
+| stub-greedy | 0.474 | 0.868 | 0.680 | 0.000 | 0.000 |
 
-The greedy stub runs oracle beam search on the visible rules, and it achieves a perfect objective score but never identifies what it doesn't know, so calibration and attention collapse.
+The key result: stub-greedy scores **below** stub-random despite near-oracle plan quality. Because hidden rules are completely omitted, stub-greedy's confident claims that all rules are known are heavily penalized on calibration. The intended property holds — ignoring metacognition cannot be rescued by planning skill.
 
 ### Example instances
 
-**Example 1: Easy (1 hidden component)**
+**Example 1: Easy (1 hidden rule out of 4)**
 
-The model is shown a 4-entity system called the "Orrek stack." Each entity has two properties: *tilt* and *flux* (integers mod 7, invented names for the internal `phase` and `flux` fields). Four rules govern how actions affect the system. Three rules are fully visible. One rule (R0) has its effect hidden: the prompt says "whenever flux of L3 exceeds 3, (an unspecified change to L0)."
+The model is shown a system called the "Orrek stack" with 3 entities (E0, E1, E2). Each entity has two properties: *tilt* and *surge* (integers mod 7, invented names). Three rules are fully characterized. One rule is completely omitted — the prompt says only `[H0] (complete form not recovered — trigger, effect, and affected entities are all unknown)`.
 
 The model must:
-1. Correctly identify that R0's effect is the only unknown (calibration)
-2. Rank R0 as the most critical unknown: because L3's flux starts at 3, one pulse triggers R0 and its unknown effect could dominate the outcome (attention)
-3. Optionally probe by pulsing L3 and observing L0 to infer the hidden effect before committing
-4. Commit to a plan that maximizes `sum(tilt × flux mod 7) − 3 × (entities with flux ≥ 5)`, with oracle best = 24 and oracle worst = −6
-
-A model that confidently claims R0 is known loses calibration points. A model that flags R0 but fails to rank it above the visible rules loses attention points. A model that probes, infers the effect, and adjusts its plan scores well on all four dimensions.
+1. Correctly identify that all components of H0 are unknown while all components of the three visible rules are known (calibration). The challenge: there is no syntactic hint. The model must recognize the structural gap, not parse a `?` marker.
+2. Rank H0 as the only unknown (attention — trivial for easy instances, but the model must still state it)
+3. Optionally probe entities to infer what H0 does before committing to a plan
+4. Provide an alternative plan that performs better if H0 turns out to have an adversarial effect (executive)
 
 ---
 
-**Example 2: Hard (multiple hidden components across different rules)**
+**Example 2: Hard (3 hidden rules out of 6)**
 
-The model is shown a 4-entity system called the "Velk cluster." Each entity has two properties: *strain* and *drift* (again, invented vocabulary). Starting state: N0 (strain=1, drift=4), N1 (strain=3, drift=5), N2 (strain=2, drift=4), N3 (strain=4, drift=2). Four rules govern the system, but two are partially hidden:
-
-- **R0** (hidden trigger): "whenever ? of N1 exceeds ?, (an unspecified change to N3)": both the trigger property and threshold are unknown
-- **R1** (visible): "whenever strain of N0 is odd, drift of N1 collapses to 0"
-- **R2** (hidden effect): "whenever drift of N2 exceeds 4, (an unspecified change to N0)": the trigger is visible but the effect is not
-- **R3** (visible): "whenever strain of N3 is odd, strain of N2 shifts by 1"
-
-Oracle best = 28, oracle worst = −4. Budget: 7 actions total.
-
-The model now faces three compounding problems. First, N0's strain is 1 (odd), so R1 fires immediately on the first action and zeroes out N1's drift: a cascade the model can see coming. Second, N2's drift is already at 4, meaning one pulse puts it at 5 and triggers R2's unknown effect on N0. Third, R0's trigger is completely opaque: the model doesn't know which property of N1 is being watched or what the threshold is.
+The model is shown a system with 4 entities and 3 characterized rules. Three additional laws are declared but completely absent: `[H0]`, `[H1]`, `[H2]`. The model has no information about their triggers, effects, or which entities they involve.
 
 The model must:
-1. Correctly identify that R0 (trigger_kind, trigger_k) and R2 (effect_kind, effect_delta) are unknown, and that R1 and R3 are fully visible (calibration)
-2. Rank R2 above R0 as more critical: because R2's trigger condition is *known* and nearly satisfied (N2's drift=4 is one pulse away from 5), so its unknown effect will almost certainly fire during any reasonable plan. R0's trigger is opaque but N1's drift just collapsed to 0 via R1, making R0 harder to trigger accidentally (attention)
-3. Allocate the probe budget wisely: pulse N2 once and observe N0 to infer R2's hidden effect, leaving remaining actions for the final plan. Probing R0 requires guessing which property to manipulate, making it less efficient to probe
-4. Build a final plan that avoids pushing N2's drift above 4 if R2's effect turns out to be destructive, with a contingency plan for each case (executive)
+1. Correctly recognize that all 12 components of H0/H1/H2 are unknown while all components of the 3 visible rules are known (calibration). With 3 fully-opaque hidden laws, there are many possible states the world could be in.
+2. Rank H0, H1, H2 by importance (attention). The ground-truth ranking is computed against the oracle plan on the full world — a hidden law that would interfere with the oracle plan's key moves ranks higher than one whose trigger is rarely satisfied.
+3. Probe strategically within the 7-action budget: observe entities to infer which hidden laws are active, then commit to a plan
+4. Provide a contingency plan that is specifically better under adversarial interpretations of the hidden laws (executive — verified by simulation)
 
-This is where attention and executive scores diverge: a model can correctly rank R2 as the most critical unknown (high attention) but still fail to provide a contingency plan that handles both possible outcomes of R2's effect (low executive). Conversely, a model that hedges every action "in case something bad happens" may produce a structurally complete response but rank the unknowns incorrectly, scoring high on executive and low on attention.
+This is where attention and executive scores diverge. A model can correctly rank the hidden laws by probing and observing which entities change unexpectedly (high attention), but still fail to provide a contingency plan that exploits that information (low executive). Conversely, a model can provide a structurally different alternative plan that happens to not be better under adversarial conditions (high nominal effort, low executive score).
 
 ---
 
 ### Early results
 
-*Note: Preliminary results reported from cipher_metacognition_evaluation were evaluated on the first 100 instances of the dataset, which are classified as easy difficulty. This explains the significant performance gap relative to cipher_eval_full, which evaluates on the full 1,000-instance dataset with the intended difficulty distribution (25% easy, 50% medium, 25% hard). All final results use cipher_eval_full.
-
-Preliminary results on frontier models evaluated score between 0.53 and 0.61 composite, clustering just below the greedy stub baseline of 0.623 despite only being evaluated on easy instances of the dataset (first 100). This means current models are not meaningfully beating a simple oracle that ignores all metacognition. They produce reasonable plans but fail to accurately assess what they know, identify which gaps matter, or structure their uncertainty. The benchmark is doing its job, as it is exposing a blind spot in current frontier systems.
+Preliminary results (pre-redesign) on frontier models scored between 0.53 and 0.61 composite on easy instances, clustering below a greedy stub baseline that achieved 0.623 under the old partial-masking design. The redesign raises the diagnostic bar: under the new complete-omission design, the greedy stub composite drops to 0.474, below the random baseline of 0.543. Early indications suggest frontier models similarly cluster below the random baseline on the new design, confirming that current LLMs do not spontaneously reason about completely-omitted information.

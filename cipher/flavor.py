@@ -62,13 +62,14 @@ class Flavor:
     object_word: str          # "lattice"
     entity_sg: str            # "glyph"
     entity_pl: str            # "glyphs"
-    entity_prefix: str        # "G"  (so entity 0 is "G0")
     phase_word: str           # "resonance"
     flux_word: str            # "torsion"
     rule_word: str            # "Law"
 
     def entity(self, i: int) -> str:
-        return f"{self.entity_prefix}{i}"
+        # Always use "E" prefix to avoid collision with rule names (R0, R1, ...)
+        # and hidden law labels (H0, H1, ...).
+        return f"E{i}"
 
     def rule_label(self, idx: int) -> str:
         greek = "αβγδεζηθικλμν"
@@ -83,7 +84,6 @@ def pick_flavor(seed: int) -> Flavor:
         object_word=rng.choice(OBJECT_WORDS),
         entity_sg=ent_sg,
         entity_pl=ent_pl,
-        entity_prefix=ent_sg[0].upper(),
         phase_word=rng.choice(PHASE_WORDS),
         flux_word=rng.choice(FLUX_WORDS),
         rule_word=rng.choice(RULE_WORDS),

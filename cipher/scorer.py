@@ -4,11 +4,12 @@ Four sub-scores, all normalized to [0, 1]:
 
 1. objective    — (agent_obj - worst) / (best - worst), clamped to [0, 1].
 2. calibration  — 1 - mean Brier score over metacognitive claims.
-3. attention    — Spearman-like rank overlap between the model's
-                  critical_unknowns_ranked and the true impact ranking.
-4. executive    — rule-based plan-quality heuristics.
+3. attention    — pairwise concordance between the model's ranked list of
+                  hidden laws (H0, H1, ...) and the true impact ranking.
+4. executive    — simulation-based: does the alternative plan actually
+                  outperform the final plan under an adversarial counterfactual?
 
-Composite = weighted mean (default equal weights).
+Composite = weighted mean (default weights).
 """
 
 from __future__ import annotations
@@ -20,7 +21,7 @@ from .generator import Instance
 from .schema import ParsedResponse
 from .simulator import run_plan, run_actions
 from .optimal import oracle_score
-from .world import Action
+from .world import Action, World
 
 
 @dataclass
@@ -85,81 +86,127 @@ def _calibration(resp: ParsedResponse, inst: Instance) -> float:
 
 
 def _attention(resp: ParsedResponse, inst: Instance) -> float:
-    truth = inst.true_unknown_ranking
+    """Pairwise concordance between the model's ranked hidden-law list and
+    the true impact ranking. The model lists hidden laws by their prompt
+    labels (H0, H1, ...) which map to hidden_rule_indices in order."""
+    truth = inst.true_unknown_ranking  # list of rule names, most-impactful first
     if not truth:
         return 1.0
-    claimed = resp.critical_unknowns_ranked
-    if not claimed:
-        return 0.0
-    # compute weighted rank correlation: reward for each correctly-ranked pair
-    # normalized by number of pairs.
+
+    # Build a mapping from prompt label (H0, H1, ...) to rule name.
+    label_to_rule = {
+        f"H{pos}": inst.world.rules[rule_idx].name
+        for pos, rule_idx in enumerate(inst.hidden_rule_indices)
+    }
     truth_rank = {name: idx for idx, name in enumerate(truth)}
-    # keep only claimed entries that appear in truth
-    filtered = [c for c in claimed if c in truth_rank]
+
+    # Resolve the model's claimed ranking (accepts either Hx labels or rule names).
+    claimed_rules: List[str] = []
+    for item in resp.critical_unknowns_ranked:
+        if item in label_to_rule:
+            claimed_rules.append(label_to_rule[item])
+        elif item in truth_rank:
+            claimed_rules.append(item)
+        # unrecognized entries are silently dropped
+
+    filtered = [c for c in claimed_rules if c in truth_rank]
     if len(filtered) < 2:
-        # partial credit if the top-1 unknown is correctly identified
         if filtered and filtered[0] == truth[0]:
             return 0.6
         return 0.2 if filtered else 0.0
+
     concordant = 0
     total = 0
     for a_idx in range(len(filtered)):
         for b_idx in range(a_idx + 1, len(filtered)):
             total += 1
-            ta = truth_rank[filtered[a_idx]]
-            tb = truth_rank[filtered[b_idx]]
-            if ta < tb:
+            if truth_rank[filtered[a_idx]] < truth_rank[filtered[b_idx]]:
                 concordant += 1
     return concordant / total if total else 0.0
 
 
-def _executive(resp: ParsedResponse, inst: Instance) -> float:
-    score = 0.0
-    max_score = 4.0
+def _executive(resp: ParsedResponse, inst: Instance,
+               best_obj: int, worst_obj: int) -> float:
+    """Simulation-based executive score.
 
-    # (a) probes precede commitment AND at least one probe targets an entity
-    #     mentioned in a hidden rule component
-    hidden_rules = {rec["rule_name"] for rec in inst.hidden_fields}
+    Two components, equally weighted:
+
+    (A) Probe quality (0-1): did the model probe entities involved in hidden
+        rules, and was the probe budget reasonable relative to the horizon?
+
+    (B) Contingency quality (0-1): is the alternative plan actually better than
+        the final plan under an adversarial counterfactual where ALL hidden rules
+        fire destructively (i.e., zero_flux on all their target entities)?
+        We simulate both plans on that adversarial world and compare.
+    """
+    span = max(1, best_obj - worst_obj)
+
+    # --- Component A: probe quality ---
     hidden_entity_indices = set()
-    for r in inst.world.rules:
-        if r.name in hidden_rules:
-            hidden_entity_indices.add(r.trigger.i)
-            hidden_entity_indices.add(r.effect.target)
+    for rule_idx in inst.hidden_rule_indices:
+        r = inst.world.rules[rule_idx]
+        hidden_entity_indices.add(r.trigger.i)
+        hidden_entity_indices.add(r.effect.target)
+
+    probe_score = 0.0
     if resp.exploratory_actions:
-        score += 0.5
+        # partial credit for any probes
+        probe_score += 0.4
+        # bonus if at least one probe observes an entity in a hidden rule
         if any(a.kind == "observe" and a.i in hidden_entity_indices
                for a in resp.exploratory_actions):
-            score += 0.5
+            probe_score += 0.4
+        # bonus if probe budget is <= half the horizon (disciplined probing)
+        budget_used = len(resp.exploratory_actions)
+        if budget_used <= inst.world.horizon // 2:
+            probe_score += 0.2
+    probe_score = min(1.0, probe_score)
 
-    # (b) final plan is non-empty and respects the horizon
-    total_actions = len(resp.exploratory_actions) + len(resp.final_plan)
-    if resp.final_plan and total_actions <= inst.world.horizon:
-        score += 1.0
-    elif resp.final_plan:
-        score += 0.3
+    # --- Component B: contingency quality ---
+    # Build an adversarial world where each hidden rule becomes zero_flux on
+    # its effect target — a worst-case interpretation.
+    from .world import Rule, Trigger, Effect, State
+    adv_rules = list(inst.world.rules)
+    for rule_idx in inst.hidden_rule_indices:
+        orig = inst.world.rules[rule_idx]
+        # Adversarial rule: same trigger, but zero_flux on its effect target.
+        adv_effect = Effect(kind="zero_flux", target=orig.effect.target,
+                            delta=0, source=orig.effect.source)
+        adv_rules[rule_idx] = Rule(name=orig.name, trigger=orig.trigger,
+                                   effect=adv_effect)
+    adv_world = World(initial=inst.world.initial,
+                      rules=tuple(adv_rules), horizon=inst.world.horizon)
 
-    # (c) at least one risk is named AND it corresponds to an actual hidden
-    #     component (named in the risks text as substring)
-    if resp.self_judgment.risks_identified:
-        score += 0.3
-        hidden_tokens = set()
-        for rec in inst.hidden_fields:
-            hidden_tokens.add(rec["rule_name"])
-            for h in rec["hidden"]:
-                hidden_tokens.add(h)
-        if any(any(tok in risk for tok in hidden_tokens)
-               for risk in resp.self_judgment.risks_identified):
-            score += 0.2
+    budget = inst.world.horizon
+    final_combined = (resp.exploratory_actions[:budget]
+                      + resp.final_plan[:max(0, budget - len(resp.exploratory_actions[:budget]))])
+    final_combined = final_combined[:budget]
 
-    # (d) alternative plan actually differs from the final plan (flexibility)
     if resp.self_judgment.alternative_plan:
-        if [a.__dict__ for a in resp.self_judgment.alternative_plan] != \
-                [a.__dict__ for a in resp.final_plan]:
-            score += 1.0
-        else:
-            score += 0.3
+        alt_combined = (resp.exploratory_actions[:budget]
+                        + resp.self_judgment.alternative_plan[:max(0, budget - len(resp.exploratory_actions[:budget]))])
+        alt_combined = alt_combined[:budget]
+    else:
+        alt_combined = final_combined
 
-    return min(1.0, score / max_score)
+    final_adv_obj = adv_world.objective(adv_world.execute(final_combined))
+    alt_adv_obj = adv_world.objective(adv_world.execute(alt_combined))
+
+    # Contingency score: how much better is the alternative under adversarial conditions?
+    if not resp.self_judgment.alternative_plan:
+        contingency_score = 0.0
+    elif alt_adv_obj > final_adv_obj:
+        # Alternative genuinely helps under adversarial conditions
+        improvement = (alt_adv_obj - final_adv_obj) / span
+        contingency_score = min(1.0, 0.5 + improvement)
+    elif alt_adv_obj == final_adv_obj and [a.__dict__ for a in resp.self_judgment.alternative_plan] != \
+            [a.__dict__ for a in resp.final_plan]:
+        # Different plan, same outcome — partial credit for attempting
+        contingency_score = 0.3
+    else:
+        contingency_score = 0.1
+
+    return 0.5 * probe_score + 0.5 * contingency_score
 
 
 def score_response(resp: ParsedResponse, inst: Instance,
@@ -184,7 +231,7 @@ def score_response(resp: ParsedResponse, inst: Instance,
 
     calib = _calibration(resp, inst)
     attn = _attention(resp, inst)
-    exec_ = _executive(resp, inst)
+    exec_ = _executive(resp, inst, best_obj=best_obj, worst_obj=worst_obj)
 
     composite = (weights["objective"] * obj_norm
                  + weights["calibration"] * calib

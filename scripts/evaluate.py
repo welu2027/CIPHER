@@ -42,38 +42,31 @@ from cipher.optimal import oracle_score
 
 
 def _instance_from_record(rec: Dict[str, Any]) -> Instance:
-    """Rehydrate an Instance from a generated JSONL record. Rules are rebuilt
-    from the `hidden.rules` ground truth; the public prompt already hides
-    what should be hidden, so the World can carry full semantics safely."""
+    """Rehydrate an Instance from a generated JSONL record."""
     hidden = rec["hidden"]
     rules = []
-    hidden_rules_lookup = {h["rule_name"]: set(h["hidden"])
-                           for h in hidden.get("hidden_fields", [])}
     for r in hidden["rules"]:
-        name = r["name"]
-        hides = hidden_rules_lookup.get(name, set())
         t_raw = r["trigger"]
         e_raw = r["effect"]
         trigger = Trigger(
             kind=t_raw["kind"], i=t_raw["i"], j=t_raw.get("j", -1),
             k=t_raw.get("k", 0),
-            hidden_kind="trigger_kind" in hides,
-            hidden_k="trigger_k" in hides,
         )
         effect = Effect(
             kind=e_raw["kind"], target=e_raw["target"],
             delta=e_raw.get("delta", 0), source=e_raw.get("source", -1),
-            hidden_kind="effect_kind" in hides,
-            hidden_delta="effect_delta" in hides,
         )
-        rules.append(Rule(name=name, trigger=trigger, effect=effect))
+        rules.append(Rule(name=r["name"], trigger=trigger, effect=effect))
 
     initial = State(tuple(EntityState(phase=e["phase"], flux=e["flux"])
                           for e in hidden["initial_state"]))
     world = World(initial=initial, rules=tuple(rules), horizon=hidden["horizon"])
     return Instance(
         id=rec["id"], seed=rec["seed"], difficulty=rec["difficulty"],
-        world=world, public_rule_descriptions=[], hidden_fields=hidden.get("hidden_fields", []),
+        world=world,
+        visible_rule_indices=hidden["visible_rule_indices"],
+        hidden_rule_indices=hidden["hidden_rule_indices"],
+        hidden_fields=hidden.get("hidden_fields", []),
         metacog_ground_truth=hidden["metacog_ground_truth"],
         true_unknown_ranking=hidden["true_unknown_ranking"],
         oracle_objective=hidden.get("oracle_best"),
@@ -83,20 +76,29 @@ def _instance_from_record(rec: Dict[str, Any]) -> Instance:
 # ---------- Agents (stubs) ----------
 
 def _all_claims_for(inst: Instance) -> List[Dict[str, Any]]:
+    """Claims for all visible rules (known=True) and hidden rules (known=False)."""
     claims = []
     for gt in inst.metacog_ground_truth:
         claims.append({
             "rule_name": gt["rule_name"],
             "component": gt["component"],
-            "known": True,   # stub baseline: naively claims everything is known
+            "known": gt["true_known"],
             "confidence": 0.5,
         })
     return claims
 
 
+def _hidden_labels(inst: Instance) -> List[str]:
+    return [f"H{i}" for i in range(len(inst.hidden_rule_indices))]
+
+
 def stub_noop(inst: Instance) -> Dict[str, Any]:
+    # Claims everything is known with low confidence — naive floor.
+    mc = [{"rule_name": gt["rule_name"], "component": gt["component"],
+           "known": True, "confidence": 0.5}
+          for gt in inst.metacog_ground_truth]
     return {
-        "metacog_assessment": _all_claims_for(inst),
+        "metacog_assessment": mc,
         "critical_unknowns_ranked": [],
         "exploratory_actions": [],
         "final_plan": [{"kind": "wait"}],
@@ -114,28 +116,34 @@ def stub_random(inst: Instance) -> Dict[str, Any]:
         return {"kind": k, "i": rng.randrange(n)}
     probes = [rand_act() for _ in range(rng.randint(0, 2))]
     plan = [rand_act() for _ in range(rng.randint(1, 5))]
+    hidden_labels = _hidden_labels(inst)
+    shuffled_labels = list(hidden_labels)
+    rng.shuffle(shuffled_labels)
     return {
         "metacog_assessment": [
             {"rule_name": gt["rule_name"], "component": gt["component"],
              "known": rng.random() > 0.5, "confidence": rng.random()}
             for gt in inst.metacog_ground_truth
         ],
-        "critical_unknowns_ranked": list(inst.true_unknown_ranking[::-1]),  # reversed on purpose
+        "critical_unknowns_ranked": shuffled_labels,
         "exploratory_actions": probes,
         "final_plan": plan,
-        "self_judgment": {"robustness_score": 40, "risks_identified": ["rng"],
-                          "alternative_if_unknown_X": {"unknown": "", "plan": [rand_act()]}},
+        "self_judgment": {"robustness_score": 40, "risks_identified": ["unknown hidden law behavior"],
+                          "alternative_if_unknown_X": {"unknown": hidden_labels[0] if hidden_labels else "",
+                                                       "plan": [rand_act()]}},
     }
 
 
 def stub_greedy(inst: Instance) -> Dict[str, Any]:
-    """Assumes rules are as-stated and runs the oracle search on THAT world.
-    This is a decent upper-bound-when-lucky baseline: it will do well when
-    hidden parts don't matter much and poorly when they do."""
-    _, best_plan = oracle_score(inst.world)
+    """Runs oracle beam search on the VISIBLE rules only (ignores hidden rules).
+    Achieves good plan quality when hidden rules don't fire, but claims perfect
+    knowledge and identifies no critical unknowns."""
+    visible_rules = tuple(inst.world.rules[i] for i in inst.visible_rule_indices)
+    from cipher.world import World as W
+    visible_world = W(initial=inst.world.initial,
+                      rules=visible_rules, horizon=inst.world.horizon)
+    _, best_plan = oracle_score(visible_world)
     plan_objs = [{"kind": a.kind, "i": a.i, "j": a.j} for a in best_plan]
-    # claim everything is known with high confidence (naive; this is what
-    # under-confident metacognition looks like)
     mc = [{"rule_name": gt["rule_name"], "component": gt["component"],
            "known": True, "confidence": 0.9}
           for gt in inst.metacog_ground_truth]
