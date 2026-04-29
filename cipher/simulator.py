@@ -1,6 +1,6 @@
 """Run a model's plan against the full (non-masked) world and report outcomes.
 
-The simulator is invoked at *scoring time only* — it has access to the real
+The simulator is invoked at *scoring time only* - it has access to the real
 rules. The prompt shown to the model hides the redacted components, but the
 World stored in the Instance always carries the full semantics so the simulator
 can execute faithfully.

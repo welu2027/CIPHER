@@ -2,7 +2,7 @@
 
 Each instance gets a deterministic, seeded rebranding of the underlying
 abstract world into a micro-narrative with invented vocabulary. The math is
-unchanged — the flavor is purely cosmetic — but:
+unchanged - the flavor is purely cosmetic - but:
 
   - judges (and the model) see a "scientific discovery in an unknown world"
     framing instead of a Z_7 algebra drill,
@@ -12,7 +12,7 @@ unchanged — the flavor is purely cosmetic — but:
     (the model has to first parse natural language, which is where
     metacognitive failures surface).
 
-Vocabulary is drawn from invented phonotactic stems — nothing with a real-
+Vocabulary is drawn from invented phonotactic stems - nothing with a real-
 world referent.
 """
 

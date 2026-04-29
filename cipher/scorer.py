@@ -2,11 +2,11 @@
 
 Four sub-scores, all normalized to [0, 1]:
 
-1. objective    — (agent_obj - worst) / (best - worst), clamped to [0, 1].
-2. calibration  — 1 - mean Brier score over metacognitive claims.
-3. attention    — pairwise concordance between the model's ranked list of
+1. objective    - (agent_obj - worst) / (best - worst), clamped to [0, 1].
+2. calibration  - 1 - mean Brier score over metacognitive claims.
+3. attention    - pairwise concordance between the model's ranked list of
                   hidden laws (H0, H1, ...) and the true impact ranking.
-4. executive    — simulation-based: does the alternative plan actually
+4. executive    - simulation-based: does the alternative plan actually
                   outperform the final plan under an adversarial counterfactual?
 
 Composite = weighted mean (default weights).
@@ -164,7 +164,7 @@ def _executive(resp: ParsedResponse, inst: Instance,
 
     # --- Component B: contingency quality ---
     # Build an adversarial world where each hidden rule becomes zero_flux on
-    # its effect target — a worst-case interpretation.
+    # its effect target - a worst-case interpretation.
     from .world import Rule, Trigger, Effect, State
     adv_rules = list(inst.world.rules)
     for rule_idx in inst.hidden_rule_indices:
@@ -201,7 +201,7 @@ def _executive(resp: ParsedResponse, inst: Instance,
         contingency_score = min(1.0, 0.5 + improvement)
     elif alt_adv_obj == final_adv_obj and [a.__dict__ for a in resp.self_judgment.alternative_plan] != \
             [a.__dict__ for a in resp.final_plan]:
-        # Different plan, same outcome — partial credit for attempting
+        # Different plan, same outcome - partial credit for attempting
         contingency_score = 0.3
     else:
         contingency_score = 0.1

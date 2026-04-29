@@ -7,7 +7,7 @@ whose trigger matches the current state applies its effect.
 Actions are issued by the agent (or the benchmark harness). After each action
 the rule engine advances one step.
 
-Everything here is intentionally abstract — no real-world nouns — so nothing
+Everything here is intentionally abstract - no real-world nouns - so nothing
 about these worlds can have appeared in pretraining data.
 """
 

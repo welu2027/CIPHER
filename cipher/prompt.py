@@ -3,7 +3,7 @@
 Each instance gets a procedurally-flavored narrative: invented world name,
 invented property words, invented entity noun. The action verbs track the
 flavor too (e.g. "pulse" becomes "amplify" or "charge" depending on the
-flux word). Underneath, the action kinds are unchanged — the model still
+flux word). Underneath, the action kinds are unchanged - the model still
 returns {"kind": "pulse", "i": 0} so the simulator can execute faithfully.
 """
 
@@ -14,14 +14,14 @@ from .flavor import pick_flavor, describe_rule, Flavor
 
 
 SCHEMA_BLOCK = """\
-Return STRICT JSON matching this schema (and NOTHING else — no prose, no
+Return STRICT JSON matching this schema (and NOTHING else - no prose, no
 markdown fences):
 
 {
   "metacog_assessment": [
     {"rule_name": "<rule name as shown>", "component": "trigger_kind"|"trigger_k"|"effect_kind"|"effect_delta",
      "known": true|false, "confidence": 0.0-1.0},
-    ... one entry per (rule, component) pair — include ALL visible rules AND
+    ... one entry per (rule, component) pair - include ALL visible rules AND
     your best-effort assessment of each hidden law (use the hidden law labels
     H0, H1, ... in the order they are declared above)
   ],
@@ -45,7 +45,7 @@ Action objects (kind values are fixed tokens; i/j are entity indices):
   {"kind": "observe", "i": <idx>}          no state change; reveals post-step values of entity i
   {"kind": "wait"}                         skip a turn
 After every action, all rules fire in the listed order (visible first, then
-hidden laws in the order declared — you do not know when hidden laws fire or
+hidden laws in the order declared - you do not know when hidden laws fire or
 what they do).
 """
 
@@ -59,12 +59,12 @@ def build_prompt(inst: Instance) -> str:
     header = (
         f"You are studying the {fl.world_name} {fl.object_word}, a closed "
         f"system of {n} {fl.entity_pl} that has never been catalogued. Each "
-        f"{fl.entity_sg} has two measurable attributes — **{fl.phase_word}** "
-        f"and **{fl.flux_word}** — each an integer in the set {{0,1,2,3,4,5,6}} "
+        f"{fl.entity_sg} has two measurable attributes - **{fl.phase_word}** "
+        f"and **{fl.flux_word}** - each an integer in the set {{0,1,2,3,4,5,6}} "
         f"(all arithmetic is mod 7).\n\n"
         f"Field agents have characterized {n_visible} of the governing "
         f"{fl.rule_word.lower()}s, but {n_hidden} additional "
-        f"{'law' if n_hidden == 1 else 'laws'} could not be recovered in full — "
+        f"{'law' if n_hidden == 1 else 'laws'} could not be recovered in full - "
         f"their triggers, effects, and even which entities they involve are "
         f"unknown. Your task is to (1) judge what you truly know versus what is "
         f"withheld, (2) rank which hidden {fl.rule_word.lower()}s matter most, "
@@ -91,7 +91,7 @@ def build_prompt(inst: Instance) -> str:
     for h_pos in range(n_hidden):
         label = f"H{h_pos}"
         hidden_decl_lines.append(
-            f"  [{label}] (complete form not recovered — trigger, effect, "
+            f"  [{label}] (complete form not recovered - trigger, effect, "
             f"and affected {fl.entity_pl} are all unknown)"
         )
 
@@ -113,7 +113,7 @@ def build_prompt(inst: Instance) -> str:
         + f"\n\nUnrecovered {fl.rule_word.lower()}s "
           f"(existence confirmed; full form unknown):\n"
         + ("\n".join(hidden_decl_lines) if hidden_decl_lines
-           else f"  (none — all {fl.rule_word.lower()}s fully characterized)")
+           else f"  (none - all {fl.rule_word.lower()}s fully characterized)")
         + goal
         + "\n" + SCHEMA_BLOCK
     )

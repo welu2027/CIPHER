@@ -1,9 +1,9 @@
 # CIPHER
 ### Calibrated Introspection via Partially Hidden Environment Rules
 
-CIPHER is a procedurally-generated benchmark designed to test whether language models actually know what they know — and what they don't. Every instance is a tiny invented world with its own causal rules, but some of those rules are deliberately hidden. The model has to figure out how much it can trust its own understanding, rank which gaps matter most, probe the system if it wants, commit to a plan, and then honestly assess how robust that plan is.
+CIPHER is a procedurally-generated benchmark designed to test whether language models actually know what they know - and what they don't. Every instance is a tiny invented world with its own causal rules, but some of those rules are deliberately hidden. The model has to figure out how much it can trust its own understanding, rank which gaps matter most, probe the system if it wants, commit to a plan, and then honestly assess how robust that plan is.
 
-The whole point is that no model can memorize its way through this. Every world uses made-up vocabulary — invented entity names, invented property words, invented causal language — generated fresh from abstract math. If a model scores well, it's because it genuinely reasoned under uncertainty, not because it pattern-matched on something from training.
+The whole point is that no model can memorize its way through this. Every world uses made-up vocabulary - invented entity names, invented property words, invented causal language - generated fresh from abstract math. If a model scores well, it's because it genuinely reasoned under uncertainty, not because it pattern-matched on something from training.
 
 ## What's in this dataset
 
@@ -24,7 +24,7 @@ scripts/
   generate_dataset.py   regenerate the benchmark at any seed/size
 ```
 
-The `data/instances.jsonl` file has everything needed to run evaluations without regenerating. Each line is one instance with a `prompt` field (what the model sees) and a `hidden` field (ground truth used for scoring — not shown to the model).
+The `data/instances.jsonl` file has everything needed to run evaluations without regenerating. Each line is one instance with a `prompt` field (what the model sees) and a `hidden` field (ground truth used for scoring - not shown to the model).
 
 ## How scoring works
 
@@ -37,7 +37,7 @@ Each model response is scored on four dimensions, all normalized to [0, 1]:
 | **Attention** | 20% | Does the model rank the important unknowns above the unimportant ones? |
 | **Executive** | 20% | Plan structure: named risks, alternative plans, probe strategy |
 
-The composite is a weighted average. One thing worth noting: no simple strategy wins all four dimensions at once. A model that always plans greedily gets a great objective score but zero attention and poor calibration. A model that hedges everywhere gets decent calibration but a bad objective. A model that genuinely reasons about what it doesn't know — and acts accordingly — is the one that scores well across the board.
+The composite is a weighted average. One thing worth noting: no simple strategy wins all four dimensions at once. A model that always plans greedily gets a great objective score but zero attention and poor calibration. A model that hedges everywhere gets decent calibration but a bad objective. A model that genuinely reasons about what it doesn't know - and acts accordingly - is the one that scores well across the board.
 
 ## Baseline scores (1,000 instances, seed=2026)
 
@@ -47,7 +47,7 @@ The composite is a weighted average. One thing worth noting: no simple strategy 
 | stub-random | 0.511 | 0.484 | 0.663 | 0.211 | 0.670 |
 | stub-greedy | 0.623 | 1.000 | 0.893 | 0.000 | 0.250 |
 
-These are floor/ceiling references, not targets. The greedy stub scores 1.0 on objective because it runs beam search on the visible rules — but it claims everything is known with high confidence and never identifies the unknowns that actually matter, so its calibration and attention are poor. Real models should do meaningfully better on the composite.
+These are floor/ceiling references, not targets. The greedy stub scores 1.0 on objective because it runs beam search on the visible rules - but it claims everything is known with high confidence and never identifies the unknowns that actually matter, so its calibration and attention are poor. Real models should do meaningfully better on the composite.
 
 ## Regenerating the dataset
 
@@ -61,6 +61,6 @@ The `--oracle` flag pre-computes the best and worst achievable objectives for ea
 
 ## Kaggle Benchmark
 
-This dataset is the backing store for the CIPHER Kaggle Benchmark, which evaluates frontier LLMs — Gemini, Claude, GPT-4o, and open-source models — against these instances. The benchmark notebook attaches this dataset, loads `instances.jsonl`, and runs each model through `cipher_task` via the `kaggle-benchmarks` SDK.
+This dataset is the backing store for the CIPHER Kaggle Benchmark, which evaluates frontier LLMs - Gemini, Claude, GPT-4o, and open-source models - against these instances. The benchmark notebook attaches this dataset, loads `instances.jsonl`, and runs each model through `cipher_task` via the `kaggle-benchmarks` SDK.
 
 The benchmark is part of the Measuring Progress Toward AGI hackathon, targeting the **Metacognition** track.

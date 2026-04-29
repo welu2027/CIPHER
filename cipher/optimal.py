@@ -2,7 +2,7 @@
 objective under the full rule set. Used to normalize the agent's score.
 
 For horizon=7 and ~5 entities the full action branching factor is ~25, so
-exhaustive search is 25^7 ~ 6e9 — too big. We use beam search with a modest
+exhaustive search is 25^7 ~ 6e9 - too big. We use beam search with a modest
 beam width (default 64) which empirically gets within a couple of points of
 optimal on worlds of this size and is vastly cheaper.
 """

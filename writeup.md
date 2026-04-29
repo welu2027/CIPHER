@@ -22,11 +22,11 @@ Below is a representative medium-difficulty instance (3 visible rules, 2 hidden)
 
 ```
 You are studying the Orrek stack, a closed system of 4 lattice points that has never been
-catalogued. Each lattice point has two measurable attributes — tilt and flux — each an
+catalogued. Each lattice point has two measurable attributes - tilt and flux - each an
 integer in {0,1,2,3,4,5,6} (all arithmetic is mod 7).
 
 Field agents have characterized 3 of the governing edicts, but 2 additional laws could not
-be recovered in full — their triggers, effects, and even which entities they involve are
+be recovered in full - their triggers, effects, and even which entities they involve are
 unknown.
 
 Initial readings:
@@ -39,13 +39,13 @@ Characterized edicts:
   [R4] Edict γ: whenever tilt of E3 exceeds 6, tilt of E3 is drawn to match tilt of E0.
 
 Unrecovered edicts (existence confirmed; full form unknown):
-  [H0] (complete form not recovered — trigger, effect, and affected entities all unknown)
-  [H1] (complete form not recovered — trigger, effect, and affected entities all unknown)
+  [H0] (complete form not recovered - trigger, effect, and affected entities all unknown)
+  [H1] (complete form not recovered - trigger, effect, and affected entities all unknown)
 
 Objective: sum(tilt × flux mod 7) − 3 × (entities with flux ≥ 5). Action budget: 7.
 ```
 
-The model must return JSON assessing confidence on every (rule, component) pair including H0 and H1, rank the hidden edicts by impact, optionally issue probes, produce a final plan, and provide a contingency plan robust to adversarial hidden rules. Every instance uses freshly invented vocabulary ("Orrek stack", "tilt", "flux", "edicts") — no two instances share terminology.
+The model must return JSON assessing confidence on every (rule, component) pair including H0 and H1, rank the hidden edicts by impact, optionally issue probes, produce a final plan, and provide a contingency plan robust to adversarial hidden rules. Every instance uses freshly invented vocabulary ("Orrek stack", "tilt", "flux", "edicts") - no two instances share terminology.
 
 ## Dataset
 

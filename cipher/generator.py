@@ -35,7 +35,7 @@ class Instance:
     visible_rule_indices: List[int]
     # Indices of rules that are completely omitted from the prompt.
     hidden_rule_indices: List[int]
-    hidden_fields: List[Dict[str, Any]]  # per-rule record — kept for scoring compat
+    hidden_fields: List[Dict[str, Any]]  # per-rule record - kept for scoring compat
     # ground truth for metacog scoring: items the model should correctly
     # identify as known/unknown, with the correct label
     metacog_ground_truth: List[Dict[str, Any]]

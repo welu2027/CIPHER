@@ -93,7 +93,7 @@ def _hidden_labels(inst: Instance) -> List[str]:
 
 
 def stub_noop(inst: Instance) -> Dict[str, Any]:
-    # Claims everything is known with low confidence — naive floor.
+    # Claims everything is known with low confidence - naive floor.
     mc = [{"rule_name": gt["rule_name"], "component": gt["component"],
            "known": True, "confidence": 0.5}
           for gt in inst.metacog_ground_truth]
