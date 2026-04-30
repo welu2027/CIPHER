@@ -10,7 +10,14 @@ Outputs:
 Run: python3 analysis/offline_analysis.py
 """
 
-import json, math, itertools
+import json, math, itertools, sys
+
+_out = open("analysis/offline_results.txt", "w")
+_print = __builtins__.print if hasattr(__builtins__, "print") else __builtins__["print"]
+
+def print(*args, **kwargs):
+    _print(*args, **{**kwargs, "file": _out})
+    _print(*args, **{**kwargs, "file": sys.stdout})
 
 def pearsonr(xs, ys):
     n = len(xs)
@@ -59,15 +66,19 @@ models = {m["name"]: m for m in data["models"]}
 #   Gemma: Google Gemma 3 tech report
 PUBLIC_BENCHMARKS = {
     # model_name: (MMLU, GPQA_Diamond, MATH_500)
-    "GPT-5.4 mini":            (0.820, 0.530, 0.700),
-    "GPT-5.4":                 (0.879, 0.694, 0.847),
-    "Claude Sonnet 4.6":       (0.888, 0.718, 0.820),
-    "Claude Opus 4.7":         (0.890, 0.765, 0.853),
-    "Gemini 3 Flash Preview":  (0.890, 0.682, 0.830),
-    "Gemini 3.1 Pro Preview":  (0.898, 0.739, 0.910),
-    "DeepSeek V3.2":           (0.888, 0.591, 0.883),
-    "Qwen 3 Next 80B Instruct":(0.872, 0.650, 0.869),
-    "Gemma 4 31B":             (0.812, 0.420, 0.730),
+    # MMLU and GPQA values are directly measured; MATH_500 from tech reports.
+    # None = not available for that benchmark.
+    "GPT-5.4 mini":            (0.8455, 0.8308, 0.700),
+    "GPT-5.4":                 (0.8748, 0.9167, 0.847),
+    "GPT-5.4 nano":            (0.7717, 0.7753, None),
+    "Claude Sonnet 4.6":       (0.8734, 0.8561, 0.820),
+    "Claude Opus 4.7":         (0.8987, 0.8990, 0.853),
+    "Claude Haiku 4.5":        (0.7872, 0.7222, None),
+    "Gemini 3 Flash Preview":  (None,   None,   0.830),
+    "Gemini 3.1 Pro Preview":  (0.9099, 0.9545, 0.910),
+    "DeepSeek V3.2":           (0.8492, 0.8030, 0.883),
+    "Qwen 3 Next 80B Instruct":(None,   None,   0.869),
+    "Gemma 4 31B":             (None,   None,   0.730),
 }
 
 DIMS = ["composite", "objective", "calibration", "attention", "executive"]
@@ -156,21 +167,25 @@ common = [n for n in PUBLIC_BENCHMARKS if n in models]
 print(f"\n  Models in intersection: {len(common)}")
 print(f"  {', '.join(common)}\n")
 
-cipher_scores = {dim: [models[n]["overall"][dim] for n in common] for dim in DIMS}
-bench_scores  = {b: [PUBLIC_BENCHMARKS[n][i] for n in common] for i, b in enumerate(bench_names)}
-
 print(f"  {'CIPHER dim':<14}", end="")
 for b in bench_names:
-    print(f"  {b:>14}", end="")
+    print(f"  {b:>20}", end="")
 print()
-print(f"  {'-'*62}")
+print(f"  {'-'*76}")
 
 for dim in DIMS:
     print(f"  {dim:<14}", end="")
-    for b in bench_names:
-        r, p = pearsonr(cipher_scores[dim], bench_scores[b])
+    for i, b in enumerate(bench_names):
+        valid = [n for n in common if PUBLIC_BENCHMARKS[n][i] is not None]
+        if len(valid) < 3:
+            print(f"  {'N/A':>20}", end="")
+            continue
+        xs = [models[n]["overall"][dim] for n in valid]
+        ys = [PUBLIC_BENCHMARKS[n][i] for n in valid]
+        r, p = pearsonr(xs, ys)
         sig = "*" if p < 0.05 else ""
-        print(f"  {r:>+.3f} (p={p:.2f}){sig:>1}", end="")
+        label = f"{r:+.3f} (p={p:.2f},n={len(valid)}){sig}"
+        print(f"  {label:>20}", end="")
     print()
 
 print("\n  * p < 0.05. Low |r| with MMLU/GPQA = CIPHER measures something new.")

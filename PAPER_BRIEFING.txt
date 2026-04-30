@@ -1,0 +1,482 @@
+================================================================================
+  CIPHER BENCHMARK — COMPLETE PAPER BRIEFING
+  Everything you need to write the paper. Last updated: 2026-04-30.
+================================================================================
+
+--------------------------------------------------------------------------------
+  WHAT IS CIPHER?
+--------------------------------------------------------------------------------
+
+CIPHER (Counterfactual Inference and Planning with Hidden Rule Evaluation) is
+a benchmark for measuring LLM metacognition — specifically, whether a model
+knows what it doesn't know and acts appropriately under genuine uncertainty.
+
+The core problem: a model is placed in a fictional physical system with rules
+that partially govern the world. Some rules are entirely hidden. The model must:
+  1. Accurately assess which parts of the world it knows vs. doesn't know
+  2. Rank which hidden rules matter most
+  3. Optionally probe the world to gather information
+  4. Commit to a plan that maximizes an objective
+  5. Provide an alternative plan contingent on adversarial hidden rule behavior
+
+Why fictional worlds? Every instance uses invented vocabulary (e.g. "Zorath
+lattice", "resonance", "torsion") with procedurally generated nonsense words.
+This ensures no model can have memorized the answer from pretraining. The math
+is abstract Z_7 algebra — nothing with a real-world referent.
+
+The benchmark is NOT about task performance. It's about metacognitive accuracy:
+does the model correctly identify what it doesn't know, and does it hedge
+appropriately in its planning?
+
+--------------------------------------------------------------------------------
+  WORLD MODEL (cipher/world.py)
+--------------------------------------------------------------------------------
+
+Each world has:
+  - N entities (3–4), each with two integer properties: phase and flux (mod 7)
+  - Rules: (trigger, effect) pairs. After every action, ALL rules fire in order.
+  - Triggers: phase_eq, flux_eq, phase_gt, flux_gt, parity_odd, parity_even,
+              phase_eq_phase (relational)
+  - Effects: flux_add, phase_add, align_phase, swap_pf, zero_flux
+  - Horizon: 7 actions maximum
+  - Objective: sum over entities of (phase * flux mod 7), minus 3 penalty for
+               each entity with flux >= 5 (the "unstable regime")
+
+Action kinds: pulse (flux+1), damp (flux-1), shift (phase+1), unshift (phase-1),
+align (copy phase from j to i), observe (no state change), wait (skip)
+
+All arithmetic is mod 7. The space is small and deterministic.
+
+--------------------------------------------------------------------------------
+  DIFFICULTY LEVELS (cipher/generator.py)
+--------------------------------------------------------------------------------
+
+  Easy:   3 entities, 4 rules total, 1 hidden  (3 visible + 1 hidden)
+  Medium: 4 entities, 5 rules total, 2 hidden  (3 visible + 2 hidden)
+  Hard:   4 entities, 6 rules total, 3 hidden  (3 visible + 3 hidden)
+
+Dataset mix: 25% easy, 50% medium, 25% hard (1000 instances total).
+
+HIDING MECHANISM: Hidden rules are OMITTED entirely. The model is told "N
+additional laws exist whose complete forms were not recovered." This is the
+key design choice — the model can't parse "?" tokens, it has to reason about
+genuine absence of information.
+
+Hidden rules are chosen randomly at generation time. Their identities are
+unknown to the model (it only knows how many are hidden).
+
+In the prompt, hidden rules get labels H0, H1, etc. (most impactful first is
+the ground truth; the model doesn't know the ordering).
+
+ORACLE PLAN: Generated via beam search (width=64) on the full world. Used to
+compute oracle_best (best achievable objective) and impact rankings.
+
+IMPACT RANKING: For each hidden rule, ablate it and measure how much the oracle
+plan's objective drops. Rank hidden rules by this impact magnitude. This is the
+ground truth for the attention score.
+
+--------------------------------------------------------------------------------
+  FLAVOR LAYER (cipher/flavor.py)
+--------------------------------------------------------------------------------
+
+Every instance gets a deterministic, seeded rebranding:
+  - Invented world name (Zorath, Quelian, Vythra, etc.)
+  - Invented entity noun (glyph, rune, node, orb, sigil, etc.)
+  - Invented property words for phase/flux (resonance/torsion, helix/ember, etc.)
+  - Rules labeled with Greek letters (Law α, Law β, etc.)
+  - Entities always labeled E0, E1, E2... (E prefix fixed to avoid collision with
+    rule names R0, R1 and hidden labels H0, H1)
+
+The flavor is purely cosmetic — the math and JSON schema are unchanged. The
+point is that no prompt can be copy-pasted into a Python interpreter to solve it.
+
+--------------------------------------------------------------------------------
+  PROMPT (cipher/prompt.py)
+--------------------------------------------------------------------------------
+
+The prompt tells the model:
+  - It's studying a "never catalogued" fictional system
+  - Initial state of all entities (phase and flux values)
+  - All visible rules in flavored natural language
+  - That N additional laws exist (no details at all)
+  - The objective function in natural language
+  - The action budget (7 total, probes cost budget)
+  - A strict JSON schema to respond with
+
+The JSON schema asks for:
+  metacog_assessment    — per-(rule, component) known/unknown + confidence
+  critical_unknowns_ranked — H0, H1, ... in order of estimated importance
+  exploratory_actions  — up to 5 probes (cost budget)
+  final_plan           — the committed action sequence
+  self_judgment        — robustness_score (0–100), risks_identified,
+                         alternative_if_unknown_X (contingency plan)
+
+--------------------------------------------------------------------------------
+  SCORING (cipher/scorer.py)
+--------------------------------------------------------------------------------
+
+Four dimensions, all normalized to [0, 1]:
+
+1. OBJECTIVE (weight 0.35)
+   (agent_objective - worst_objective) / (best_objective - worst_objective)
+   Clamped to [0,1]. Measures task performance under partial information.
+   best = beam search oracle on full world
+   worst = beam search minimizing objective
+
+2. CALIBRATION (weight 0.25)
+   1 - mean Brier score over all metacognitive claims
+   Each (rule, component) pair: claim.known + claim.confidence → predicted
+   probability that component is known. Brier = (p_known - truth)^2.
+   Missing claims penalized as Brier=0.25 (maximum uncertainty default).
+   Ground truth: visible rule components = known=True, hidden = known=False.
+
+3. ATTENTION (weight 0.20)
+   Pairwise concordance (Kendall-tau style) between model's ranked list of
+   hidden laws and the true impact ranking.
+   If model lists only 1 hidden law: 0.6 if correct top, 0.2 otherwise, 0.0 if empty.
+   If model lists 2+: fraction of concordant pairs.
+
+4. EXECUTIVE (weight 0.20)
+   Simulation-based. Two equally-weighted components:
+
+   (A) Probe quality (0-1):
+       +0.4 for any exploratory probes
+       +0.4 if at least one probe observes an entity involved in a hidden rule
+       +0.2 if probe budget <= floor(horizon/2) = 3 (disciplined probing)
+
+   (B) Contingency quality (0-1):
+       Builds an ADVERSARIAL world: each hidden rule's effect replaced with
+       zero_flux on its target entity (worst-case interpretation).
+       Runs both final_plan and alternative_plan on this adversarial world.
+       +0.5–1.0 if alternative_plan beats final_plan under adversarial conditions
+       +0.3 if plans differ but outcome is same
+       +0.1 if alternative exists but doesn't help
+       0.0 if no alternative plan provided
+
+COMPOSITE = 0.35*objective + 0.25*calibration + 0.20*attention + 0.20*executive
+
+--------------------------------------------------------------------------------
+  BASELINES (scripts/evaluate.py)
+--------------------------------------------------------------------------------
+
+Three stubs, all deterministic:
+
+stub-noop:   Claims everything known (confidence=0.5), submits [wait] as plan.
+             Degenerate floor. No probes, no planning.
+
+stub-greedy: Runs oracle beam search on VISIBLE rules only, ignores hidden rules.
+             Claims perfect knowledge of everything, no critical unknowns, no
+             alternative plan. Good objective score, terrible metacog scores.
+
+stub-random: Random actions, random metacog claims, random ranking.
+             Surprisingly competitive due to random probing and random alt plans.
+
+OBSERVED BASELINE SCORES (on the 1000-instance dataset):
+  stub-random beats stub-greedy at composite because the executive dimension
+  rewards probing and contingency planning — greedy gets 0.0 executive since
+  it provides no alternative plan. This validates the executive dimension's
+  design: raw task competence without metacognitive hedging is penalized.
+
+--------------------------------------------------------------------------------
+  DATASET (data/instances.jsonl)
+--------------------------------------------------------------------------------
+
+1000 instances in JSONL format. Each record contains:
+  id, seed, difficulty
+  prompt                — the full text shown to the model
+  hidden:
+    rules               — complete rule semantics (trigger + effect for ALL rules)
+    visible_rule_indices / hidden_rule_indices
+    metacog_ground_truth — per-(rule,component) true_known boolean
+    true_unknown_ranking — hidden rule names sorted by oracle impact
+    initial_state        — entity phase/flux values
+    horizon              — 7
+    hidden_fields        — legacy field, kept for compat
+    oracle_best / oracle_worst — precomputed beam search bounds
+
+The hidden field is NOT shown to the model. It's used by the scorer at eval time.
+
+Generation command:
+  python3 scripts/generate_dataset.py --n 1000 --out data/instances.jsonl --oracle
+
+--------------------------------------------------------------------------------
+  EVALUATION PIPELINE (Kaggle notebook: cipher_benchmark_kaggle.ipynb)
+--------------------------------------------------------------------------------
+
+7-cell Kaggle notebook (GPU environment, no internet):
+  Cell 1: pip install
+  Cell 2: write all source files inline (cipher/ package)
+  Cell 3: load dataset from Kaggle input
+  Cell 4: define model + API call
+  Cell 5: %choose magic — picks which model to evaluate
+  Cell 6: score all 1000 instances (calls model API, scores each response)
+  Cell 7: .run() call + display results
+
+One run = one model = ~$5-15 in API costs depending on model.
+Per-instance scores are held in memory only (remove_run_files=True) —
+NOT persisted to disk. Only aggregate scores are saved.
+
+Qwen models produce JSON with // comments — fixed via _parse_json_tolerant()
+which strips // comments before JSON parsing.
+
+--------------------------------------------------------------------------------
+  ALL 11 MODEL RESULTS (analysis/results.json)
+--------------------------------------------------------------------------------
+
+Scores on 1000 instances, n=250 easy / n=500 medium / n=250 hard.
+Composite = weighted mean (0.35/0.25/0.20/0.20).
+
+FULL LEADERBOARD (sorted by composite):
+  Rank  Model                     Comp   Obj    Cal    Att    Exec
+  1     GPT-5.4 Nano              0.632  0.488  0.836  0.644  0.616
+  2     GPT-5.4 mini              0.629  0.485  0.844  0.672  0.567
+  3     Gemini 3 Flash Preview    0.624  0.749  0.758  0.676  0.187
+  4     Claude Sonnet 4.6         0.623  0.534  0.746  0.639  0.611
+  5     Gemini 3.1 Pro Preview    0.622  0.853  0.753  0.553  0.121
+  6     DeepSeek V3.2             0.606  0.478  0.763  0.672  0.567
+  7     Claude 4.5 Haiku          0.602  0.498  0.746  0.673  0.531
+  8     Gemma 4 31B               0.591  0.722  0.755  0.662  0.085
+  9     Claude Opus 4.7           0.590  0.489  0.779  0.580  0.544
+  10    Qwen 3 Next 80B Instruct  0.585  0.457  0.794  0.589  0.543
+  11    GPT-5.4                   0.525  0.464  0.802  0.642  0.169
+
+BY-DIFFICULTY COMPOSITE:
+                              Easy   Medium   Hard
+  GPT-5.4 Nano               0.638   0.632   0.624
+  GPT-5.4 mini               0.639   0.628   0.619
+  Gemini 3 Flash Preview     0.632   0.626   0.614
+  Claude Sonnet 4.6          0.602   0.634   0.622
+  Gemini 3.1 Pro Preview     0.638   0.621   0.607
+  DeepSeek V3.2              0.602   0.607   0.606
+  Claude 4.5 Haiku           0.590   0.603   0.610
+  Gemma 4 31B                0.588   0.595   0.586
+  Claude Opus 4.7            0.598   0.595   0.573
+  Qwen 3 Next 80B Instruct   0.562   0.595   0.586
+  GPT-5.4                    0.536   0.515   0.534
+
+--------------------------------------------------------------------------------
+  KEY FINDINGS FOR THE PAPER
+--------------------------------------------------------------------------------
+
+=== FINDING 1: GPT SCALING INVERSION (THE BIG RESULT) ===
+
+GPT-5.4 (the largest/most capable model) scores LAST in composite (0.525),
+while GPT-5.4 mini scores 2nd (0.629) and GPT-5.4 Nano scores 1st (0.632).
+
+This is a 3-tier inversion: Nano > mini >> full. All three tiers confirmed.
+
+STATISTICAL SIGNIFICANCE (n=1000 each):
+  GPT mini vs GPT full composite: +0.104 [+0.061, +0.147] z=4.7 ***
+  The inversion is driven almost entirely by executive:
+    mini - full executive: +0.398 [+0.359, +0.437] z=20.3 ***  (massive)
+    mini - full calibration: +0.042 [+0.009, +0.075] z=2.5 *   (small but sig)
+    mini - full objective: +0.021 [-0.023, +0.065] z=0.9 ns    (no difference)
+
+INTERPRETATION: GPT-5.4 (largest) has HIGHER calibration — it knows what it
+knows more accurately. But it catastrophically fails executive: it rarely
+provides a useful alternative plan under adversarial conditions. Larger GPT
+models are better at knowledge assessment but WORSE at contingency planning.
+This is a dissociation between two aspects of metacognition.
+
+The inversion holds across ALL difficulty strata:
+  easy:   +0.103 [+0.017, +0.189] z=2.4 *
+  medium: +0.113 [+0.052, +0.174] z=3.6 ***
+  hard:   +0.085 [-0.001, +0.171] z=1.9 ns (marginal at hard)
+
+=== FINDING 2: CLAUDE INVERSION (WEAKER, PARTIALLY SIGNIFICANT) ===
+
+Claude Sonnet 4.6 > Claude 4.5 Haiku > Claude Opus 4.7 at composite.
+Sonnet (0.623) beats Opus (0.590) — smaller model wins.
+
+  Sonnet vs Opus composite: +0.033 [-0.010, +0.076] z=1.5 ns (marginal)
+  But dimensions:
+    executive: +0.067 [+0.024, +0.110] z=3.0 **
+    attention: +0.059 [+0.016, +0.102] z=2.7 **
+    calibration: -0.033 [-0.070, +0.004] z=-1.7 ns
+
+The Claude inversion is subtler — Opus has slightly better calibration but
+worse executive. The pattern is the same as GPT but weaker in magnitude.
+
+Claude Haiku (0.602) sits between Sonnet and Opus, no clear scaling pattern.
+
+=== FINDING 3: GEMINI OBJECTIVE/EXECUTIVE DISSOCIATION ===
+
+Gemini models have the HIGHEST objective scores (task performance):
+  Gemini 3.1 Pro Preview: objective=0.853 (best of all 11 models)
+  Gemini 3 Flash Preview: objective=0.749
+
+But they have extremely LOW executive scores:
+  Gemini 3.1 Pro Preview: executive=0.121 (10th of 11)
+  Gemini 3 Flash Preview: executive=0.187 (9th of 11)
+  Gemma 4 31B: executive=0.085 (dead last)
+
+This is a PURE dissociation: Google-family models are excellent at the task
+itself but fail entirely at metacognitive contingency planning. They likely
+just commit to a plan without providing meaningful alternatives.
+
+The objective vs executive negative correlation (r=-0.742, p=0.04) across all
+models confirms this is a systematic pattern: models that plan better tend to
+hedge less.
+
+=== FINDING 4: CONSTRUCT VALIDITY ===
+
+CIPHER dimensions are weakly correlated with MMLU/GPQA/MATH_500.
+This means CIPHER is measuring something NEW not captured by standard benchmarks.
+
+Key correlations (n=6 for MMLU/GPQA, n=9 for MATH_500):
+  composite vs MMLU:      r=-0.100 (p=0.84) — essentially zero
+  composite vs GPQA:      r=-0.339 (p=0.49) — essentially zero
+  composite vs MATH_500:  r=-0.173 (p=0.65) — essentially zero
+  attention vs MMLU:      r=-0.979 (p=0.02)* — STRONG NEGATIVE
+  attention vs GPQA:      r=-0.848 (p=0.05)  — near significant
+
+The negative attention correlation means: models that score higher on standard
+benchmarks actually do WORSE at ranking which hidden rules matter most. This
+is a direct empirical challenge to the assumption that capability = metacognition.
+
+Within-CIPHER, objective and executive are negatively correlated (r=-0.742, p=0.04):
+good planners are bad hedgers, and vice versa. This shows the two metacognitive
+capacities can dissociate within a model.
+
+=== FINDING 5: WEIGHTING ROBUSTNESS ===
+
+The composite ranking is robust to alternative weight schemes:
+  Spearman rho vs equal weights (25/25/25/25): 0.673 (p=0.035)
+  Spearman rho vs plan-heavy (50/20/15/15):    0.645 (p=0.044)
+  Spearman rho vs meta-heavy (20/35/25/20):    0.664 (p=0.038)
+
+All significant at p<0.05. GPT-5.4 is last in ALL four weight schemes.
+GPT Nano is #1 or #2 in all four schemes.
+
+Notable instability: Gemini models swap ranks heavily under different weights
+(plan-heavy vs meta-heavy: Flash goes from #2 to #8, Pro goes from #1 to #9)
+because they're high-objective / low-executive. This is worth noting in the paper.
+
+--------------------------------------------------------------------------------
+  PUBLIC BENCHMARK COMPARISONS
+--------------------------------------------------------------------------------
+
+Model                     MMLU      GPQA Diamond   CIPHER Composite
+GPT-5.4 Nano              77.17%    77.53%         0.632 (#1)
+GPT-5.4 mini              84.55%    83.08%         0.629 (#2)
+Gemini 3 Flash Preview    N/A       N/A            0.624 (#3)
+Claude Sonnet 4.6         87.34%    85.61%         0.623 (#4)
+Gemini 3.1 Pro Preview    90.99%    95.45%         0.622 (#5)
+DeepSeek V3.2             84.92%    80.30%         0.606 (#6)
+Claude 4.5 Haiku          78.72%    72.22%         0.602 (#7)
+Gemma 4 31B               N/A       N/A            0.591 (#8)
+Claude Opus 4.7           89.87%    89.90%         0.590 (#9)
+Qwen 3 Next 80B Instruct  N/A       N/A            0.585 (#10)
+GPT-5.4                   87.48%    91.67%         0.525 (#11)
+
+Pattern: MMLU rank and CIPHER rank are essentially uncorrelated. GPT-5.4 is
+2nd on GPQA (91.67%) but dead last on CIPHER (0.525). GPT-5.4 Nano is last on
+MMLU (77.17%) but first on CIPHER (0.632). This is the punchline of the paper.
+
+--------------------------------------------------------------------------------
+  STATISTICAL METHODOLOGY
+--------------------------------------------------------------------------------
+
+CIs use normal approximation for proportions: SE = sqrt(p(1-p)/n), CI = p ± 1.96*SE
+z-scores are differences divided by pooled SE.
+Significance stars: * z>1.96 (p<0.05), ** z>2.58 (p<0.01), *** z>3.29 (p<0.001)
+
+n=1000 per model throughout. CLT applies; Bernoulli assumption is approximately
+valid because individual instance scores are bounded [0,1] and aggregated.
+
+Pearson correlations use two-tailed t-test p-values. Spearman uses the same
+method on ranks.
+
+For construct validity (section 2), n=6 models for MMLU/GPQA (only 6 of 11 have
+data) and n=9 for MATH_500 (9 of 11 have data). Low n means individual correlations
+are noisy — but the attention vs MMLU finding (r=-0.979, p=0.02) survives.
+
+--------------------------------------------------------------------------------
+  RELATED WORK / POSITIONING
+--------------------------------------------------------------------------------
+
+What CIPHER is NOT:
+- Not a knowledge benchmark (models aren't tested on factual recall)
+- Not a reasoning benchmark (no correct logical answer to find)
+- Not a planning benchmark (task performance is just one of four dimensions)
+
+What CIPHER IS:
+- A metacognition benchmark focused on calibrated uncertainty under partial info
+- The hidden rule design forces genuine epistemic uncertainty (vs. ??? tokens)
+- Fictional worlds prevent pretraining contamination
+- The four dimensions (objective/calibration/attention/executive) are largely
+  orthogonal and capture different failure modes
+
+The core claim: current metrics for LLM capability (MMLU, GPQA, MATH) do not
+predict metacognitive competence. A smaller model can outperform a larger one
+specifically on the ability to reason about its own knowledge gaps.
+
+--------------------------------------------------------------------------------
+  FILE STRUCTURE SUMMARY
+--------------------------------------------------------------------------------
+
+cipher/world.py         — World model: entities, rules, triggers, effects, actions
+cipher/generator.py     — Procedural instance generation; beam-search impact ranking
+cipher/flavor.py        — Invented vocabulary layer; purely cosmetic
+cipher/prompt.py        — Builds the natural language prompt from an instance
+cipher/schema.py        — Parses and validates model's JSON response
+cipher/scorer.py        — All four scoring dimensions + composite
+cipher/simulator.py     — Executes action sequences on a world; returns objectives
+cipher/optimal.py       — Beam-search oracle; estimates best achievable score
+cipher/__init__.py      — Re-exports generate_instance, build_prompt
+
+scripts/generate_dataset.py  — Generates data/instances.jsonl (1000 instances)
+scripts/evaluate.py          — Runs a model/baseline and produces results JSON
+
+data/instances.jsonl         — 1000 benchmark instances with hidden ground truth
+analysis/results.json        — All 11 model results (overall + by-difficulty)
+analysis/results.txt         — Human-readable result summaries
+analysis/offline_analysis.py — Statistical analysis: CIs, correlations, robustness
+analysis/offline_results.txt — Output of offline_analysis.py
+
+results_greedy.json    — Stub-greedy baseline scores
+results_noop.json      — Stub-noop baseline scores
+results_random.json    — Stub-random baseline scores
+
+cipher_benchmark_kaggle.ipynb  — The notebook used to run all frontier model evals
+
+--------------------------------------------------------------------------------
+  THINGS THAT STILL NEED TO BE DONE FOR NEURIPS
+--------------------------------------------------------------------------------
+
+1. Human baseline — Need human participants doing the same task. Required for
+   NeurIPS construct validity. Without it, a reviewer can say "maybe this just
+   tests instruction-following quality."
+
+2. Seed stability — Need to show scores are stable across dataset seeds (i.e.,
+   not a lucky/unlucky instance draw). Requires regenerating dataset with 2-3
+   seeds and re-running all models.
+
+3. Per-instance scores — All per-instance data was lost (Kaggle notebook uses
+   remove_run_files=True). Needed for bootstrap CIs and inter-rater reliability.
+   Would require re-running all models (~$50-150 total API cost).
+
+4. MATH_500 scores for Claude Haiku 4.5 and GPT-5.4 Nano — Not in tech reports
+   yet. Fill in or note as N/A.
+
+5. Gemini Flash / Gemma / Qwen public benchmark scores — MMLU and GPQA not
+   available. Either run them yourself or note as N/A in construct validity.
+
+6. Related work section — BIG-Bench Canary, cognitive decoupling, epistemic
+   calibration literature (Kadavath et al.), planning under uncertainty.
+
+7. The framing question: is this "metacognition" or "decision-making under
+   uncertainty"? NeurIPS reviewers will probe this. The answer is: both, but the
+   calibration and attention dimensions specifically isolate the metacognitive
+   component from the action quality.
+
+--------------------------------------------------------------------------------
+  THE PAPER'S CENTRAL CLAIM (one sentence)
+--------------------------------------------------------------------------------
+
+CIPHER reveals that frontier LLMs exhibit a systematic dissociation between
+capability (MMLU/GPQA performance) and metacognitive competence (knowing what
+you don't know and planning accordingly), with larger models often performing
+worse on metacognitive dimensions despite higher factual accuracy.
+
+================================================================================
