@@ -1,11 +1,5 @@
 __pycache__/
 *.pyc
-results*.json
 .venv/
 .DS_Store
 .env
-leaderboard.json
-instructions.md
-samplerun.txt
-benchmark.txt
-writeup.md
