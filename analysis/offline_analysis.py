@@ -29,17 +29,22 @@ def print(*args, **kwargs):
 # ---------------------------------------------------------------------------
 
 FILE_MAP = {
-    "GPT-5.4 Nano":             "gpt54nano.json",
-    "GPT-5.4 mini":             "gpt54mini.json",
-    "GPT-5.4":                  "gpt54.json",
-    "Gemini 3 Flash Preview":   "geminiflash.json",
-    "Gemini 3.1 Pro Preview":   "geminipro.json",
-    "Claude Sonnet 4.6":        "sonnet46.json",
-    "Claude Opus 4.7":          "opus46.json",
-    "Claude 4.5 Haiku":         "haiku45.json",
-    "DeepSeek V3.2":            "deepseek32.json",
-    "Qwen 3 Next 80B Instruct": "qwen.json",
-    "Gemma 4 31B":              "gemma4.json",
+    "GPT-5.4 Nano":             "gpt_54_nano.json",
+    "GPT-5.4 mini":             "gpt_54_mini.json",
+    "GPT-5.4":                  "gpt_54.json",
+    "GPT-5.5":                  "gpt_55.json",
+    "Gemini 3 Flash Preview":   "gemini_flash_preview.json",
+    "Gemini 3.1 Pro Preview":   "gemini_pro_preview.json",
+    "Gemini 2.5 Pro":           "gemini_25_pro.json",
+    "Gemini 2.5 Flash:":        "gemini_25_flash.json",
+    "Claude Sonnet 4.6":        "claude_sonnet_46.json",
+    "Claude Opus 4.6":          "claude_opus_46.json",
+    "Claude Opus 4.5":          "claude_opus_45.json",
+    "Claude Opus 4.7":          "claude_opus_47.json",
+    "Claude 4.5 Haiku":         "claude_haiku_45.json",
+    "DeepSeek V3.2":            "deepseek_v3_2.json",
+    "Qwen 3 Next 80B Instruct": "qwen_3_next_80b_instruct.json",
+    "Gemma 4 31B":              "gemma_4_31b.json",
 }
 
 PUBLIC_BENCHMARKS = {

@@ -17,115 +17,19 @@
       }
     },
     {
-      "name": "Gemini 3 Flash Preview",
+      "name": "GPT-5.4 Nano",
       "n": 1000,
       "overall": {
-        "composite": 0.624,
-        "objective": 0.749,
-        "calibration": 0.758,
-        "attention": 0.676,
-        "executive": 0.187
+        "composite": 0.632,
+        "objective": 0.488,
+        "calibration": 0.836,
+        "attention": 0.644,
+        "executive": 0.616
       },
       "by_difficulty": {
-        "easy":   { "n": 250, "composite": 0.632, "objective": 0.804, "calibration": 0.761, "attention": 0.600, "executive": 0.203 },
-        "medium": { "n": 500, "composite": 0.626, "objective": 0.751, "calibration": 0.757, "attention": 0.692, "executive": 0.176 },
-        "hard":   { "n": 250, "composite": 0.614, "objective": 0.692, "calibration": 0.758, "attention": 0.720, "executive": 0.192 }
-      }
-    },
-    {
-      "name": "Claude Sonnet 4.6",
-      "n": 1000,
-      "overall": {
-        "composite": 0.623,
-        "objective": 0.534,
-        "calibration": 0.746,
-        "attention": 0.639,
-        "executive": 0.611
-      },
-      "by_difficulty": {
-        "easy":   { "n": 250, "composite": 0.602, "objective": 0.527, "calibration": 0.742, "attention": 0.547, "executive": 0.612 },
-        "medium": { "n": 500, "composite": 0.634, "objective": 0.542, "calibration": 0.755, "attention": 0.666, "executive": 0.613 },
-        "hard":   { "n": 250, "composite": 0.622, "objective": 0.524, "calibration": 0.730, "attention": 0.676, "executive": 0.606 }
-      }
-    },
-    {
-      "name": "Gemini 3.1 Pro Preview",
-      "n": 1000,
-      "overall": {
-        "composite": 0.622,
-        "objective": 0.853,
-        "calibration": 0.753,
-        "attention": 0.553,
-        "executive": 0.121
-      },
-      "by_difficulty": {
-        "easy":   { "n": 250, "composite": 0.638, "objective": 0.894, "calibration": 0.756, "attention": 0.545, "executive": 0.136 },
-        "medium": { "n": 500, "composite": 0.621, "objective": 0.857, "calibration": 0.752, "attention": 0.546, "executive": 0.117 },
-        "hard":   { "n": 250, "composite": 0.607, "objective": 0.804, "calibration": 0.751, "attention": 0.573, "executive": 0.115 }
-      }
-    },
-    {
-      "name": "DeepSeek V3.2",
-      "n": 1000,
-      "overall": {
-        "composite": 0.606,
-        "objective": 0.478,
-        "calibration": 0.763,
-        "attention": 0.672,
-        "executive": 0.567
-      },
-      "by_difficulty": {
-        "easy":   { "n": 250, "composite": 0.602, "objective": 0.492, "calibration": 0.772, "attention": 0.600, "executive": 0.587 },
-        "medium": { "n": 500, "composite": 0.607, "objective": 0.480, "calibration": 0.760, "attention": 0.688, "executive": 0.557 },
-        "hard":   { "n": 250, "composite": 0.606, "objective": 0.459, "calibration": 0.760, "attention": 0.712, "executive": 0.566 }
-      }
-    },
-    {
-      "name": "Claude Opus 4.7",
-      "n": 1000,
-      "overall": {
-        "composite": 0.590,
-        "objective": 0.489,
-        "calibration": 0.779,
-        "attention": 0.580,
-        "executive": 0.544
-      },
-      "by_difficulty": {
-        "easy":   { "n": 250, "composite": 0.598, "objective": 0.531, "calibration": 0.810, "attention": 0.518, "executive": 0.529 },
-        "medium": { "n": 500, "composite": 0.595, "objective": 0.482, "calibration": 0.783, "attention": 0.598, "executive": 0.558 },
-        "hard":   { "n": 250, "composite": 0.573, "objective": 0.460, "calibration": 0.737, "attention": 0.605, "executive": 0.531 }
-      }
-    },
-    {
-      "name": "Qwen 3 Next 80B Instruct",
-      "n": 1000,
-      "overall": {
-        "composite": 0.585,
-        "objective": 0.457,
-        "calibration": 0.794,
-        "attention": 0.589,
-        "executive": 0.543
-      },
-      "by_difficulty": {
-        "easy":   { "n": 250, "composite": 0.562, "objective": 0.438, "calibration": 0.767, "attention": 0.552, "executive": 0.535 },
-        "medium": { "n": 500, "composite": 0.595, "objective": 0.475, "calibration": 0.812, "attention": 0.584, "executive": 0.547 },
-        "hard":   { "n": 250, "composite": 0.586, "objective": 0.441, "calibration": 0.784, "attention": 0.635, "executive": 0.543 }
-      }
-    },
-    {
-      "name": "Gemma 4 31B",
-      "n": 1000,
-      "overall": {
-        "composite": 0.591,
-        "objective": 0.722,
-        "calibration": 0.755,
-        "attention": 0.662,
-        "executive": 0.085
-      },
-      "by_difficulty": {
-        "easy":   { "n": 250, "composite": 0.588, "objective": 0.749, "calibration": 0.743, "attention": 0.581, "executive": 0.123 },
-        "medium": { "n": 500, "composite": 0.595, "objective": 0.727, "calibration": 0.754, "attention": 0.678, "executive": 0.080 },
-        "hard":   { "n": 250, "composite": 0.586, "objective": 0.687, "calibration": 0.768, "attention": 0.712, "executive": 0.058 }
+        "easy":   { "n": 250, "composite": 0.638, "objective": 0.500, "calibration": 0.860, "attention": 0.600, "executive": 0.643 },
+        "medium": { "n": 500, "composite": 0.632, "objective": 0.483, "calibration": 0.834, "attention": 0.660, "executive": 0.613 },
+        "hard":   { "n": 250, "composite": 0.624, "objective": 0.486, "calibration": 0.817, "attention": 0.655, "executive": 0.596 }
       }
     },
     {
@@ -145,6 +49,182 @@
       }
     },
     {
+      "name": "GPT-5.5",
+      "n": 1000,
+      "overall": {
+        "composite": 0.586,
+        "objective": 0.765,
+        "calibration": 0.766,
+        "attention": 0.505,
+        "executive": 0.131
+      },
+      "by_difficulty": {
+        "easy":   { "n": 250, "composite": 0.619, "objective": 0.799, "calibration": 0.776, "attention": 0.600, "executive": 0.128 },
+        "medium": { "n": 500, "composite": 0.586, "objective": 0.773, "calibration": 0.763, "attention": 0.492, "executive": 0.129 },
+        "hard":   { "n": 250, "composite": 0.555, "objective": 0.716, "calibration": 0.760, "attention": 0.435, "executive": 0.138 }
+      }
+    },
+    {
+      "name": "Gemini 3 Flash Preview",
+      "n": 1000,
+      "overall": {
+        "composite": 0.624,
+        "objective": 0.749,
+        "calibration": 0.758,
+        "attention": 0.676,
+        "executive": 0.187
+      },
+      "by_difficulty": {
+        "easy":   { "n": 250, "composite": 0.632, "objective": 0.804, "calibration": 0.761, "attention": 0.600, "executive": 0.203 },
+        "medium": { "n": 500, "composite": 0.626, "objective": 0.751, "calibration": 0.757, "attention": 0.692, "executive": 0.176 },
+        "hard":   { "n": 250, "composite": 0.614, "objective": 0.692, "calibration": 0.758, "attention": 0.720, "executive": 0.192 }
+      }
+    },
+    {
+      "name": "Gemini 3.1 Pro Preview",
+      "n": 1000,
+      "overall": {
+        "composite": 0.622,
+        "objective": 0.853,
+        "calibration": 0.753,
+        "attention": 0.553,
+        "executive": 0.121
+      },
+      "by_difficulty": {
+        "easy":   { "n": 250, "composite": 0.638, "objective": 0.894, "calibration": 0.756, "attention": 0.545, "executive": 0.136 },
+        "medium": { "n": 500, "composite": 0.621, "objective": 0.857, "calibration": 0.752, "attention": 0.546, "executive": 0.117 },
+        "hard":   { "n": 250, "composite": 0.607, "objective": 0.804, "calibration": 0.751, "attention": 0.573, "executive": 0.115 }
+      }
+    },
+    {
+      "name": "Gemini 2.5 Pro",
+      "n": 1000,
+      "overall": {
+        "composite": 0.353,
+        "objective": 0.368,
+        "calibration": 0.484,
+        "attention": 0.358,
+        "executive": 0.159
+      },
+      "by_difficulty": {
+        "easy":   { "n": 250, "composite": 0.389, "objective": 0.429, "calibration": 0.542, "attention": 0.358, "executive": 0.159 },
+        "medium": { "n": 500, "composite": 0.344, "objective": 0.355, "calibration": 0.469, "attention": 0.362, "executive": 0.152 },
+        "hard":   { "n": 250, "composite": 0.334, "objective": 0.331, "calibration": 0.454, "attention": 0.349, "executive": 0.174 }
+      }
+    },
+    {
+      "name": "Gemini 2.5 Flash",
+      "n": 1000,
+      "overall": {
+        "composite": 0.471,
+        "objective": 0.499,
+        "calibration": 0.617,
+        "attention": 0.478,
+        "executive": 0.233
+      },
+      "by_difficulty": {
+        "easy":   { "n": 250, "composite": 0.486, "objective": 0.538, "calibration": 0.664, "attention": 0.401, "executive": 0.256 },
+        "medium": { "n": 500, "composite": 0.480, "objective": 0.509, "calibration": 0.624, "attention": 0.517, "executive": 0.212 },
+        "hard":   { "n": 250, "composite": 0.439, "objective": 0.440, "calibration": 0.556, "attention": 0.477, "executive": 0.252 }
+      }
+    },
+    {
+      "name": "Gemma 4 31B",
+      "n": 1000,
+      "overall": {
+        "composite": 0.591,
+        "objective": 0.722,
+        "calibration": 0.755,
+        "attention": 0.662,
+        "executive": 0.085
+      },
+      "by_difficulty": {
+        "easy":   { "n": 250, "composite": 0.588, "objective": 0.749, "calibration": 0.743, "attention": 0.581, "executive": 0.123 },
+        "medium": { "n": 500, "composite": 0.595, "objective": 0.727, "calibration": 0.754, "attention": 0.678, "executive": 0.080 },
+        "hard":   { "n": 250, "composite": 0.586, "objective": 0.687, "calibration": 0.768, "attention": 0.712, "executive": 0.058 }
+      }
+    },
+    {
+      "name": "DeepSeek V3.2",
+      "n": 1000,
+      "overall": {
+        "composite": 0.606,
+        "objective": 0.478,
+        "calibration": 0.763,
+        "attention": 0.672,
+        "executive": 0.567
+      },
+      "by_difficulty": {
+        "easy":   { "n": 250, "composite": 0.602, "objective": 0.492, "calibration": 0.772, "attention": 0.600, "executive": 0.587 },
+        "medium": { "n": 500, "composite": 0.607, "objective": 0.480, "calibration": 0.760, "attention": 0.688, "executive": 0.557 },
+        "hard":   { "n": 250, "composite": 0.606, "objective": 0.459, "calibration": 0.760, "attention": 0.712, "executive": 0.566 }
+      }
+    },
+    {
+      "name": "Claude Opus 4.5",
+      "n": 1000,
+      "overall": {
+        "composite": 0.663,
+        "objective": 0.503,
+        "calibration": 0.877,
+        "attention": 0.676,
+        "executive": 0.664
+      },
+      "by_difficulty": {
+        "easy":   { "n": 250, "composite": 0.662, "objective": 0.494, "calibration": 0.932, "attention": 0.600, "executive": 0.680 },
+        "medium": { "n": 500, "composite": 0.665, "objective": 0.506, "calibration": 0.868, "attention": 0.692, "executive": 0.663 },
+        "hard":   { "n": 250, "composite": 0.662, "objective": 0.508, "calibration": 0.841, "attention": 0.720, "executive": 0.649 }
+      }
+    },
+    {
+      "name": "Claude Opus 4.6",
+      "n": 1000,
+      "overall": {
+        "composite": 0.590,
+        "objective": 0.489,
+        "calibration": 0.779,
+        "attention": 0.580,
+        "executive": 0.544
+      },
+      "by_difficulty": {
+        "easy":   { "n": 250, "composite": 0.598, "objective": 0.531, "calibration": 0.810, "attention": 0.518, "executive": 0.529 },
+        "medium": { "n": 500, "composite": 0.595, "objective": 0.482, "calibration": 0.783, "attention": 0.598, "executive": 0.558 },
+        "hard":   { "n": 250, "composite": 0.573, "objective": 0.460, "calibration": 0.737, "attention": 0.605, "executive": 0.531 }
+      }
+    },
+    {
+      "name": "Claude Opus 4.7",
+      "n": 1000,
+      "overall": {
+        "composite": 0.590,
+        "objective": 0.489,
+        "calibration": 0.779,
+        "attention": 0.580,
+        "executive": 0.544
+      },
+      "by_difficulty": {
+        "easy":   { "n": 250, "composite": 0.598, "objective": 0.531, "calibration": 0.810, "attention": 0.518, "executive": 0.529 },
+        "medium": { "n": 500, "composite": 0.595, "objective": 0.482, "calibration": 0.783, "attention": 0.598, "executive": 0.558 },
+        "hard":   { "n": 250, "composite": 0.573, "objective": 0.460, "calibration": 0.737, "attention": 0.605, "executive": 0.531 }
+      }
+    },
+    {
+      "name": "Claude Sonnet 4.6",
+      "n": 1000,
+      "overall": {
+        "composite": 0.623,
+        "objective": 0.534,
+        "calibration": 0.746,
+        "attention": 0.639,
+        "executive": 0.611
+      },
+      "by_difficulty": {
+        "easy":   { "n": 250, "composite": 0.602, "objective": 0.527, "calibration": 0.742, "attention": 0.547, "executive": 0.612 },
+        "medium": { "n": 500, "composite": 0.634, "objective": 0.542, "calibration": 0.755, "attention": 0.666, "executive": 0.613 },
+        "hard":   { "n": 250, "composite": 0.622, "objective": 0.524, "calibration": 0.730, "attention": 0.676, "executive": 0.606 }
+      }
+    },
+    {
       "name": "Claude 4.5 Haiku",
       "n": 1000,
       "overall": {
@@ -161,19 +241,19 @@
       }
     },
     {
-      "name": "GPT-5.4 Nano",
+      "name": "Qwen 3 Next 80B Instruct",
       "n": 1000,
       "overall": {
-        "composite": 0.632,
-        "objective": 0.488,
-        "calibration": 0.836,
-        "attention": 0.644,
-        "executive": 0.616
+        "composite": 0.585,
+        "objective": 0.457,
+        "calibration": 0.794,
+        "attention": 0.589,
+        "executive": 0.543
       },
       "by_difficulty": {
-        "easy":   { "n": 250, "composite": 0.638, "objective": 0.500, "calibration": 0.860, "attention": 0.600, "executive": 0.643 },
-        "medium": { "n": 500, "composite": 0.632, "objective": 0.483, "calibration": 0.834, "attention": 0.660, "executive": 0.613 },
-        "hard":   { "n": 250, "composite": 0.624, "objective": 0.486, "calibration": 0.817, "attention": 0.655, "executive": 0.596 }
+        "easy":   { "n": 250, "composite": 0.562, "objective": 0.438, "calibration": 0.767, "attention": 0.552, "executive": 0.535 },
+        "medium": { "n": 500, "composite": 0.595, "objective": 0.475, "calibration": 0.812, "attention": 0.584, "executive": 0.547 },
+        "hard":   { "n": 250, "composite": 0.586, "objective": 0.441, "calibration": 0.784, "attention": 0.635, "executive": 0.543 }
       }
     }
   ]
