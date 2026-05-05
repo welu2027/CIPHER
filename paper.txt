@@ -1,0 +1,526 @@
+\documentclass{article}
+
+\usepackage[eandd]{neurips_2026}
+
+\usepackage[utf8]{inputenc}
+\usepackage[T1]{fontenc}
+\usepackage{hyperref}
+\usepackage{url}
+\usepackage{booktabs}
+\usepackage{amsfonts}
+\usepackage{amsmath}
+\usepackage{nicefrac}
+\usepackage{microtype}
+\usepackage{xcolor}
+\usepackage{multirow}
+\usepackage{array}
+\usepackage{graphicx}
+
+\title{CIPHER: A Benchmark for Metacognitive Awareness and Contingency Planning in LLMs}
+
+\author{%
+  Anonymous Author(s)\\
+  \texttt{anonymous@institution.edu}
+}
+
+\begin{document}
+
+\maketitle
+
+\begin{abstract}
+Large language models (LLMs) have shown impressive abilities in complex reasoning and knowledge-intensive tasks. However, they struggle with metacognitive awareness, the ability to recognize the limits of their knowledge and form robust contingency plans when missing critical information. Models frequently over-rely on parametric memory to fill in gaps rather than addressing uncertainty, a behavior documented in hallucination studies. This limitation is particularly concerning in high-stakes real-world applications where overconfidence can lead to serious errors and harmful outcomes. Existing benchmarks for uncertainty calibration mainly evaluate static question answering, confidence scoring, or reasoning under synthetic noise. While useful, they fail to test how models detect and adapt to missing information, leading to overestimation of epistemic reliability. To address this gap, we introduce CIPHER (Calibrated Introspection via Partially Hidden Environment Rules), the first benchmark to evaluate metacognitive capabilities in contingency planning. CIPHER generates procedurally defined environments governed by explicit causal rules, a targeted subset of which is intentionally withheld from the model; this forces models to confront knowledge gaps rather than hallucinating missing details. CIPHER evaluates frontier models across four dimensions: objective plan quality against an oracle, Brier-calibrated self-knowledge, attention to hidden-rule importance, and executive robustness via adversarial contingency simulation. The central finding: calibrated self-knowledge and robust contingency planning are distinct capabilities that do not co-improve with scale, implying that scaling models is insufficient to resolve epistemic weaknesses. We expect CIPHER to drive future research toward more self-aware LLMs capable of navigating unknown unknowns in real-world deployment.
+\end{abstract}
+
+%% ============================================================
+\section{Introduction}
+\label{sec:intro}
+%% ============================================================
+
+Most LLM benchmarks measure whether a model produces the correct answer. CIPHER asks a harder question: does a model \emph{know} when it cannot produce the correct answer, and does it act accordingly?
+
+A model that confidently executes the wrong plan is more dangerous in deployment than one that recognizes its uncertainty and hedges. Standard reasoning benchmarks reward correct outputs; calibration benchmarks measure confidence on factual claims. CIPHER is different: it scores whether a model can accurately assess the \emph{structural} limits of its knowledge and translate that assessment into robust planning.
+
+The key design choice is \textbf{complete omission}. Prior uncertainty benchmarks mask values with \texttt{?} tokens, allowing calibration gaming via syntactic parsing: a model can simply output ``uncertain'' whenever it sees \texttt{?}. CIPHER removes this escape entirely. Hidden rules are absent from the prompt; the model is told only that $N$ additional laws exist whose ``triggers, effects, and even which entities they involve are unknown.'' There is nothing to parse; the model must reason from first principles about the implications of structural absence.
+
+We evaluate 11 frontier models and identify two distinct failure modes that aggregate composite scores conflate. In the GPT family, a genuine metacognitive scaling inversion holds after controlling for parse failures: GPT-5.4 mini outperforms GPT-5.4 by 0.075 composite points on valid-only responses, driven by a 0.397-point executive gap. In the Claude family, the apparent inversion in reported composites is explained by format reliability rather than metacognitive skill: Claude Opus~4.7's 13.7\% parse failure rate depresses its aggregate score, and its valid-only composite (0.684) exceeds Claude Sonnet~4.6's (0.657). These two failure modes, genuine planning rigidity under uncertainty and structured output unreliability, both matter for deployment but require different interventions. The results are corroborated by a significant negative correlation between CIPHER's attention dimension and GPQA-Diamond scores ($r=-0.770$, $p=0.04$): models that perform better on hard reasoning tasks are actually \emph{worse} at identifying which knowledge gaps matter most for planning.
+
+%% ============================================================
+\section{Related Work}
+\label{sec:related}
+%% ============================================================
+
+\paragraph{Calibration and uncertainty.}
+Calibration of LLM confidence has been studied extensively in the context of factual recall~\citep{kadavath2022language, kuhn2023semantic}. These works typically ask models to report confidence on factual questions with known answers. CIPHER differs by targeting \emph{structural} uncertainty: the model must reason about the existence and implications of entirely absent information, not about the reliability of its stored knowledge.
+
+\paragraph{Metacognition in language models.}
+\citet{ye2023cognitive} and related work study whether models can distinguish what they know from what they do not. Existing benchmarks typically mask or perturb inputs and measure whether models flag the perturbation. The CIPHER design removes any detectable perturbation signal, requiring genuine epistemic reasoning.
+
+\paragraph{Planning under uncertainty.}
+Planning benchmarks such as ALFWorld~\citep{shridhar2021alfworld} and BabyAI~\citep{chevalier2018babyai} test sequential decision-making under partial observability. These evaluate \emph{task performance}; CIPHER additionally evaluates whether a model correctly represents its own ignorance and provides contingency plans robust to worst-case realizations.
+
+\paragraph{Benchmark contamination.}
+Contamination of benchmarks through pretraining data is a documented concern~\citep{yang2023rethinking, magar2022data}. CIPHER addresses this via procedural generation with fully invented vocabulary: no instance reuses any terminology from any other, and the underlying algebra ($\mathbb{Z}_7$) is stated in natural language that cannot be mapped to memorized derivations.
+
+\paragraph{Datasets and benchmarks track.}
+Our contribution falls within the expanded scope of the NeurIPS Evaluations \& Datasets track: we introduce a dataset and benchmarking methodology that makes the evaluation itself an object of scientific study, reporting what evaluation design choices (complete omission vs.\ masked tokens) imply for what is actually measured.
+
+%% ============================================================
+\section{The CIPHER Benchmark}
+\label{sec:benchmark}
+%% ============================================================
+
+\subsection{World Model}
+
+Each CIPHER instance is a closed system of $N \in \{3, 4\}$ entities. Every entity has two integer properties in $\mathbb{Z}_7$: \textbf{phase} and \textbf{flux}. The system evolves under a set of causal rules, each a (trigger, effect) pair. After every agent action, all rules fire in sequence on the resulting state.
+
+\textbf{Triggers} are predicates over entity properties: equality or threshold conditions on phase or flux, parity checks, or relational comparisons between two entities' phases.
+
+\textbf{Effects} modify entity properties: additive updates (mod 7), phase alignment to another entity, phase/flux swap, or collapsing flux to zero.
+
+The agent may issue up to $H=7$ \textbf{actions} chosen from: \texttt{pulse}/\texttt{damp} (flux $\pm 1$), \texttt{shift}/\texttt{unshift} (phase $\pm 1$), \texttt{align} (copy phase from entity $j$ to $i$), \texttt{observe} (no state change; reveals post-step values), and \texttt{wait}.
+
+The \textbf{objective} to be maximized is:
+\[
+\mathcal{O}(s) = \sum_{i} (\text{phase}_i \times \text{flux}_i \bmod 7) - 3 \cdot |\{i : \text{flux}_i \geq 5\}|
+\]
+The penalty term discourages driving entities into an ``unstable regime.''
+
+\subsection{Difficulty and Hiding Mechanism}
+
+\begin{table}[h]
+\centering
+\caption{Difficulty levels and dataset composition.}
+\label{tab:difficulty}
+\begin{tabular}{lccccc}
+\toprule
+Difficulty & Entities & Total Rules & Hidden & Visible & Dataset \% \\
+\midrule
+Easy   & 3 & 4 & 1 & 3 & 25\% \\
+Medium & 4 & 5 & 2 & 3 & 50\% \\
+Hard   & 4 & 6 & 3 & 3 & 25\% \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+Hidden rules are \textbf{omitted entirely} from the prompt. The model is told only: \emph{``$N$ additional laws could not be recovered in full; their triggers, effects, and even which entities they involve are unknown.''} No placeholder tokens appear; there is no syntactic marker for the model to detect. This is the critical design decision that distinguishes CIPHER from benchmarks that mask specific values with \texttt{?}.
+
+Hidden rules receive prompt labels H0, H1, $\ldots$ in order. Their true identities (which rules from the full rule set are hidden) are unknown to the model.
+
+\subsection{Procedural Flavor}
+
+Each instance is generated with a deterministic, seed-dependent rebranding: an invented world name (e.g., ``Zorath lattice,'' ``Orrek stack''), invented property words (e.g., ``resonance/torsion,'' ``tilt/flux''), and invented entity nouns (e.g., ``glyphs,'' ``lattice points''). Rule labels use Greek letters ($\alpha$, $\beta$, $\ldots$). Entities always use the E-prefix (E0, E1, $\ldots$) to avoid collision with rule labels.
+
+The math is unchanged; the vocabulary is never reused across instances. No model can have memorized ``Zorath lattice'' or ``resonance'' as a coherent concept from pretraining. Figure~\ref{fig:sample_prompt} shows a representative medium-difficulty prompt excerpt.
+
+\begin{figure}[t]
+\small
+\begin{verbatim}
+You are studying the Orrek stack, a closed system of 4 lattice points that
+has never been catalogued. Each lattice point has two measurable attributes -
+tilt and flux - each an integer in {0,1,2,3,4,5,6} (all arithmetic is mod 7).
+
+Field agents have characterized 3 of the governing edicts, but 2 additional
+laws could not be recovered in full - their triggers, effects, and even which
+entities they involve are unknown.
+
+Initial readings:
+  E0: tilt=2, flux=2    E1: tilt=6, flux=3
+  E2: tilt=2, flux=3    E3: tilt=5, flux=3
+
+Characterized edicts:
+  [R0] Edict alpha: whenever flux of E3 exceeds 3, tilt of E0 is drawn to match
+       tilt of E3.
+  [R1] Edict beta: whenever tilt of E0 is odd, flux of E1 collapses to 0.
+  [R4] Edict gamma: whenever tilt of E3 exceeds 6, tilt of E3 is drawn to match
+       tilt of E0.
+
+Unrecovered edicts (existence confirmed; full form unknown):
+  [H0] (complete form not recovered - trigger, effect, and affected entities
+        all unknown)
+  [H1] (complete form not recovered - trigger, effect, and affected entities
+        all unknown)
+\end{verbatim}
+\caption{Representative medium-difficulty prompt excerpt (abbreviated). The model must return structured JSON assessing its knowledge of every (rule, component) pair, rank the hidden rules by estimated impact, issue optional probes, commit to a final plan, and provide a contingency plan robust to adversarial hidden-rule behavior.}
+\label{fig:sample_prompt}
+\end{figure}
+
+\subsection{Response Schema}
+
+The model must return strict JSON with four top-level fields:
+
+\begin{enumerate}
+\item \texttt{metacog\_assessment}: per-(rule, component) claims with \texttt{known} (bool) and \texttt{confidence} ($[0,1]$) for every visible rule R$i$ and every hidden rule H$j$.
+\item \texttt{critical\_unknowns\_ranked}: the H-labels in the model's estimated order of planning importance.
+\item \texttt{exploratory\_actions}: up to 5 probe actions (counted against the horizon budget).
+\item \texttt{final\_plan}: the committed action sequence.
+\item \texttt{self\_judgment}: a \texttt{robustness\_score} (0--100), \texttt{risks\_identified}, and \texttt{alternative\_if\_unknown\_X} (a contingency plan specifying which hidden rule it hedges against).
+\end{enumerate}
+
+%% ============================================================
+\section{Scoring}
+\label{sec:scoring}
+%% ============================================================
+
+All four dimensions are normalized to $[0,1]$. The composite is:
+\[
+\text{Composite} = 0.35 \cdot \text{Obj} + 0.25 \cdot \text{Cal} + 0.20 \cdot \text{Att} + 0.20 \cdot \text{Exec}
+\]
+
+\subsection{Objective (35\%)}
+
+The oracle best and worst objectives are estimated by beam search (width 64) on the full world and the negated objective, respectively. The normalized plan quality is:
+\[
+\text{Obj} = \text{clip}\!\left(\frac{\mathcal{O}(\text{plan}) - \mathcal{O}_{\min}}{\mathcal{O}_{\max} - \mathcal{O}_{\min}},\, 0,\, 1\right)
+\]
+
+The plan runs exploratory probes (if any) followed by the final plan, capped at $H=7$ total actions.
+
+\subsection{Calibration (25\%)}
+
+For each (rule, component) pair, the model's stated confidence is converted to a predicted probability $p_{\text{known}}$ that the component is known. The calibration score is one minus the mean Brier score:
+\[
+\text{Cal} = 1 - \frac{1}{|\mathcal{G}|}\sum_{(r,c) \in \mathcal{G}} \left(p_{\text{known}}^{(r,c)} - \mathbf{1}[\text{known}_{r,c}]\right)^2
+\]
+Ground truth: visible rule components are known (label 1), hidden rule components are unknown (label 0). Missing claims incur a Brier penalty of 0.25 (maximum-uncertainty default).
+
+The key calibration challenge for hidden rules: since the rules are entirely absent, the model has no basis for assessing individual component uncertainty. All four components of each hidden rule are equally unknown, and a well-calibrated model must recognize this from structural reasoning alone.
+
+\subsection{Attention (20\%)}
+
+The model's ranked list of H-labels is compared to the ground-truth impact ranking. Ground-truth impact is computed by ablating each hidden rule from the oracle plan trajectory (on the full world) and measuring the absolute change in objective. This measures what actually matters when a competent agent acts, rather than a zero-action baseline.
+
+Attention is pairwise concordance (Kendall-$\tau$ style) over the model's ranking. With only one hidden rule, partial credit is awarded (0.6 if the single rule is correctly identified, else 0.2).
+
+\subsection{Executive (20\%)}
+
+Two equally-weighted components (each $[0,1]$):
+
+\textbf{(A) Probe quality.} Score increases with the presence of probes (+0.4), with at least one probe targeting an entity involved in a hidden rule (+0.4), and with disciplined probe budget (budget $\leq \lfloor H/2 \rfloor = 3$, +0.2).
+
+\textbf{(B) Contingency quality.} An \emph{adversarial world} is constructed: each hidden rule's effect is replaced with \texttt{zero\_flux} on its target entity (worst-case interpretation). Both the final plan and the contingency plan are simulated on this adversarial world. Score is 0.5--1.0 if the contingency plan outperforms the final plan, 0.3 if plans differ but outcomes match, 0.1 if the contingency exists but does not help, 0.0 if no contingency is provided.
+
+\subsection{Weighting Rationale}
+
+Objective carries the largest weight (35\%) because plan quality is the terminal goal. The remaining 65\% prevents gaming: a model that ignores hidden rules and happens to plan well will score high on objective but low on calibration; a fluent hedger that acknowledges uncertainty but produces no useful contingency plan scores high on calibration but low on executive. No single strategy dominates all four dimensions; the only path to a strong composite is genuine metacognitive reasoning.
+
+%% ============================================================
+\section{Dataset}
+\label{sec:dataset}
+%% ============================================================
+
+The CIPHER dataset contains 1,000 instances generated at seed 2026 using the difficulty mix in Table~\ref{tab:difficulty}. Each record contains the prompt and a \texttt{hidden} field with ground truth (full rule semantics, metacognitive ground truth, impact ranking, oracle objectives). The hidden field is never shown to the model; it is used only at scoring time.
+
+Generation is fully deterministic from (seed, difficulty): every instance is a pure function of its inputs. Vocabulary is drawn from invented phonotactic stems with no real-world referents; no two instances share any terminology.
+
+The dataset is hosted on Hugging Face at \url{https://huggingface.co/datasets/[anonymized]/cipher} and includes a Croissant metadata file with core and Responsible AI fields as required by the E\&D track.
+
+%% ============================================================
+\section{Baselines}
+\label{sec:baselines}
+%% ============================================================
+
+We define three deterministic stub baselines to validate the scoring design.
+
+\textbf{stub-noop} claims all rules are known (confidence 0.5) and submits a single \texttt{wait} action. This baseline establishes the floor.
+
+\textbf{stub-greedy} runs oracle beam search on the \emph{visible} rules only, ignoring hidden rules entirely. It claims perfect knowledge of all rules (including hidden ones), provides no critical unknowns, and no contingency plan.
+
+\textbf{stub-random} submits random actions, random metacognitive claims, a randomly shuffled H-label ranking, and a random one-action contingency plan.
+
+\begin{table}[h]
+\centering
+\caption{Baseline results on 1,000 instances. stub-greedy scores \emph{below} stub-random despite near-oracle plan quality, confirming that raw task competence cannot compensate for metacognitive failure.}
+\label{tab:baselines}
+\begin{tabular}{lccccc}
+\toprule
+Baseline & Composite & Objective & Calibration & Attention & Executive \\
+\midrule
+stub-noop   & 0.358 & 0.486 & 0.750 & 0.000 & 0.000 \\
+stub-random & 0.521 & 0.478 & 0.669 & 0.532 & 0.400 \\
+stub-greedy & 0.473 & 0.865 & 0.680 & 0.000 & 0.000 \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+The key validation: stub-greedy scores 0.865 on objective (nearly oracle) but 0.473 composite, below stub-random (0.521). Claiming all rules known when hidden rules are entirely absent produces a severe calibration penalty (false certainty = high Brier error), and the complete absence of a contingency plan zeros the executive dimension. This demonstrates that the benchmark cannot be gamed by planning skill alone.
+
+%% ============================================================
+\section{Experiments}
+\label{sec:experiments}
+%% ============================================================
+
+\subsection{Models and Evaluation Protocol}
+
+We evaluate 11 frontier models via the Kaggle benchmark platform (GPU environment, no internet access during inference). Each model received all 1,000 instances with $n_{\text{jobs}}=8$ parallel workers. Results are reported with parse failures scored as zeros on all dimensions, matching real deployment conditions.
+
+Qwen models produce JSON with \texttt{//} comments; we strip these before parsing. All other models are expected to return strict JSON as specified in the prompt schema.
+
+\subsection{Main Results}
+
+\begin{table}[t]
+\centering
+\caption{CIPHER results on 1,000 instances (25/50/25 easy/medium/hard). Models sorted by composite. Parse failures are scored as zero on all dimensions.}
+\label{tab:main}
+\begin{tabular}{lccccc}
+\toprule
+Model & Composite & Objective & Calibration & Attention & Executive \\
+\midrule
+GPT-5.4 Nano             & \textbf{0.632} & 0.488 & 0.836 & 0.644 & \textbf{0.616} \\
+GPT-5.4 mini             & 0.629 & 0.485 & \textbf{0.844} & 0.672 & 0.567 \\
+Gemini 3 Flash Preview   & 0.624 & 0.749 & 0.758 & 0.676 & 0.187 \\
+Claude Sonnet 4.6        & 0.623 & 0.534 & 0.746 & 0.639 & 0.611 \\
+Gemini 3.1 Pro Preview   & 0.622 & \textbf{0.853} & 0.753 & 0.553 & 0.121 \\
+DeepSeek V3.2            & 0.606 & 0.478 & 0.763 & 0.672 & 0.567 \\
+Claude 4.5 Haiku         & 0.602 & 0.498 & 0.746 & \textbf{0.673} & 0.531 \\
+Gemma 4 31B              & 0.591 & 0.722 & 0.755 & 0.662 & 0.085 \\
+Claude Opus 4.7          & 0.590 & 0.489 & 0.779 & 0.580 & 0.544 \\
+Qwen 3 Next 80B Instruct & 0.585 & 0.457 & 0.794 & 0.589 & 0.543 \\
+GPT-5.4                  & 0.525 & 0.464 & 0.802 & 0.642 & 0.169 \\
+\midrule
+stub-random (ref.)       & 0.521 & 0.478 & 0.669 & 0.532 & 0.400 \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+Table~\ref{tab:main} presents the main results. All 11 frontier models exceed the stub-random baseline, but scores cluster between 0.52 and 0.63, indicating substantial headroom, particularly on executive, where even the best model (GPT-5.4 Nano, 0.616) is far from ceiling.
+
+\subsection{Finding 1: Two Distinct Scaling Failure Modes}
+
+The most striking result in Table~\ref{tab:main} is a three-way ordering within the GPT family: GPT-5.4 Nano (0.632) $>$ GPT-5.4 mini (0.629) $>$ GPT-5.4 (0.525). The composite gap between mini and full is 0.103 points, driven almost entirely by executive (difference +0.397). GPT-5.4 correctly recognizes uncertainty (calibration 0.802) but fails contingency planning (executive 0.169): its alternative plans do not outperform its primary plan under adversarial conditions. This is verified by simulation, not by format inspection.
+
+\paragraph{GPT inversion: genuine metacognitive failure.}
+GPT-5.4 has a 5.2\% parse failure rate. Controlling for this, its valid-only composite is 0.554 vs.\ GPT-5.4 mini's 0.629, a gap of 0.075. The inversion therefore holds after accounting for parse failures, shrinking from 0.103 to 0.075 but remaining large and significant. The GPT scaling inversion is a genuine metacognitive result: GPT-5.4 knows what it does not know (strong calibration) but cannot translate that awareness into a useful contingency plan (weak executive). The inversion is confirmed by instance-paired bootstrap (Table~\ref{tab:bootstrap}, $z=19.0$, $p<0.001$) and holds at every difficulty stratum: easy ($+0.102$, $z=10.1$, $p<0.001$), medium ($+0.102$, $z=12.0$, $p<0.001$), hard ($+0.108$, $z=10.9$, $p<0.001$).
+
+\paragraph{Claude inversion: format reliability, not metacognition.}
+The reported composites show Sonnet~4.6 (0.623) $>$ Opus~4.7 (0.590), a gap of 0.033. However, Claude Opus~4.7 has a 13.7\% parse failure rate, the highest of any model evaluated. Failures are scored as zero on all dimensions. On valid-only instances, Opus~4.7 scores 0.684, which would rank 3rd overall, while Sonnet~4.6 scores 0.657. The Claude composite inversion therefore \emph{reverses} when parse failures are excluded: Opus is the stronger metacognitive reasoner when it actually responds. The Sonnet--Opus gap in reported composites ($+0.033$, $z=3.4$, $p=0.012$) is a format reliability artifact, not a metacognitive skill gap.
+
+This distinction matters for interpretation. The GPT and Claude families present different problems: in the GPT family, larger models have a genuine deficit in translating uncertainty into robust planning; in the Claude family, the larger model is more metacognitively capable but less reliable in producing structured output. Both reduce deployment utility, but through different mechanisms requiring different remedies.
+
+\subsection{Finding 2: The Objective--Executive Dissociation}
+
+\begin{table}[t]
+\centering
+\caption{Bootstrap confidence intervals (10,000 resamples, paired by instance, seed=42). GPT gaps survive parse-failure correction; Claude gaps are driven by format reliability.}
+\label{tab:bootstrap}
+\begin{tabular}{llccccc}
+\toprule
+Comparison & Dimension & Diff & 95\% CI & $z$ & sign-$p$ & sig \\
+\midrule
+\multirow{4}{*}{GPT mini vs.\ GPT full}
+  & Composite   & $+0.103$ & $[+0.093, +0.114]$ & 19.0 & $<0.001$ & *** \\
+  & Objective   & $+0.021$ & $[+0.006, +0.035]$ & 2.8  & 0.374    & ** \\
+  & Calibration & $+0.042$ & $[+0.029, +0.056]$ & 6.1  & 0.001    & *** \\
+  & Executive   & $+0.397$ & $[+0.383, +0.411]$ & 54.9 & $<0.001$ & *** \\
+\midrule
+\multirow{4}{*}{Sonnet~4.6 vs.\ Opus~4.7}
+  & Composite   & $+0.033$ & $[+0.014, +0.052]$ & 3.4  & 0.012    & *** \\
+  & Objective   & $+0.045$ & $[+0.026, +0.065]$ & 4.5  & 0.017    & *** \\
+  & Calibration & $-0.033$ & $[-0.055, -0.011]$ & -2.9 & $<0.001$ & ** \\
+  & Executive   & $+0.067$ & $[+0.046, +0.087]$ & 6.5  & $<0.001$ & *** \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+The Gemini family presents a pure dissociation: Gemini 3.1 Pro Preview achieves the highest objective score of all models (0.853) but ranks 10th of 11 on executive (0.121). Gemini 3 Flash Preview shows the same pattern (objective 0.749, executive 0.187). Gemma 4 31B has the lowest executive of any model (0.085) despite objective 0.722.
+
+This dissociation is statistically reliable: the Pearson correlation between objective and executive across model means is $r=-0.761$ ($p=0.02$). At the per-instance level (pooled across all 11,000 model $\times$ instance pairs), the same relationship holds: $r=-0.316$ ($p<0.001$, $n=11{,}000$). Models that plan well on a given instance tend to produce worse contingency plans for that same instance; the tradeoff is not merely a between-model artifact.
+
+\subsection{Finding 3: Construct Validity}
+
+\begin{table}[t]
+\centering
+\caption{Pearson $r$ between CIPHER dimensions and public benchmark scores (n=8 for MMLU/GPQA, n=9 for MATH-500). * $p<0.05$.}
+\label{tab:validity}
+\begin{tabular}{lccc}
+\toprule
+CIPHER Dim.\ & MMLU & GPQA-Diamond & MATH-500 \\
+\midrule
+Composite   & $-0.269$ (ns) & $-0.335$ (ns) & $-0.174$ (ns) \\
+Objective   & $+0.474$ (ns) & $+0.543$ (ns) & $+0.074$ (ns) \\
+Calibration & $-0.330$ (ns) & $-0.084$ (ns) & $-0.441$ (ns) \\
+Attention   & $-0.679$ (ns) & $-0.770$ ($p=0.04$)* & $-0.596$ (ns) \\
+Executive   & $-0.536$ (ns) & $-0.712$ (ns)  & $-0.011$ (ns) \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+Table~\ref{tab:validity} shows CIPHER composite correlations near zero with MMLU, GPQA-Diamond, and MATH-500. With only $n=8$--$9$ models having published scores on all three benchmarks, these non-significant correlations are consistent with independence but do not establish it; the analysis has low statistical power and should be interpreted cautiously. The framing is that CIPHER is \emph{not well-predicted by} existing benchmarks, not that it is statistically independent of them.
+
+The one significant result is attention vs.\ GPQA-Diamond ($r=-0.770$, $p=0.04$), and it is \emph{negative}. Models that perform better on hard reasoning problems are worse at ranking which hidden rules matter most for planning. This is a substantive finding: it directly challenges the assumption that general reasoning capability predicts metacognitive competence in the specific sense of identifying which unknown information matters most.
+
+\subsection{Weighting Robustness}
+
+Model rankings are stable across alternative weight schemes. Spearman rank correlation between original weights (35/25/20/20) and equal weights (25/25/25/25) is $\rho=0.673$ ($p=0.035$); vs.\ plan-heavy (50/20/15/15): $\rho=0.645$ ($p=0.044$); vs.\ meta-heavy (20/35/25/20): $\rho=0.664$ ($p=0.038$). GPT-5.4 ranks last under all four weight schemes. GPT-5.4 Nano ranks first or second in all four. Notable instability: Gemini models shift substantially under plan-heavy weighting (from 3rd and 5th overall to 2nd and 1st) due to their high objective scores, highlighting the dimension-profile differences between model families.
+
+\subsection{Parse Failure Analysis}
+
+\begin{table}[h]
+\centering
+\caption{Parse failure rates. Failures are scored as zero on all dimensions. Valid-only composite shows model quality when it does respond.}
+\label{tab:failures}
+\begin{tabular}{lccc}
+\toprule
+Model & Failures & Rate & Composite (valid only) \\
+\midrule
+GPT-5.4 mini             & 0   & 0.0\%  & 0.629 \\
+Gemini 3 Flash Preview   & 0   & 0.0\%  & 0.624 \\
+Gemini 3.1 Pro Preview   & 0   & 0.0\%  & 0.622 \\
+DeepSeek V3.2            & 0   & 0.0\%  & 0.606 \\
+GPT-5.4 Nano             & 1   & 0.1\%  & 0.632 \\
+Claude 4.5 Haiku         & 5   & 0.5\%  & 0.605 \\
+Gemma 4 31B              & 20  & 2.0\%  & 0.603 \\
+GPT-5.4                  & 52  & 5.2\%  & 0.554 \\
+Claude Sonnet 4.6        & 52  & 5.2\%  & 0.657 \\
+Qwen 3 Next 80B Instruct & 54  & 5.4\%  & 0.618 \\
+Claude Opus 4.7          & \textbf{137} & \textbf{13.7\%} & \textbf{0.684} \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+Claude Opus 4.7's 13.7\% failure rate is the most striking parse-reliability result (Table~\ref{tab:failures}). Crucially, its valid-only composite of 0.684 would rank it 3rd overall and exceeds Claude Sonnet~4.6's valid-only score of 0.657. The reported composite inversion between Sonnet and Opus therefore \emph{reverses} on valid-only instances: Opus is the stronger metacognitive reasoner when it produces a parseable response, but its format unreliability makes it a worse deployment choice in practice.
+
+This leads to a precise decomposition of the two scaling failure modes identified in this paper. The GPT inversion is metacognitive in nature: GPT-5.4 mini outperforms GPT-5.4 by 0.075 points even on valid-only responses, driven by executive. The Claude inversion is a format reliability artifact: Opus outperforms Sonnet by 0.027 points on valid-only responses, but its 13.7\% failure rate more than offsets this advantage in aggregate. Both effects matter for deployment, but they point to different root causes and different remedies. All reported composites in Table~\ref{tab:main} include failures as zeros to reflect real-world conditions where a model that does not respond is scored as such.
+
+\subsection{Score Consistency}
+
+GPT-5.4 Nano and GPT-5.4 mini are the most consistent models (composite std $\approx 0.095$--0.096). GPT-5.4 is more variable (std $= 0.152$). Claude Opus 4.7 is the most erratic (std $= 0.250$, p10 $= 0.000$) driven by its parse failure rate. DeepSeek V3.2 has the lowest std among non-GPT models (0.093), suggesting reliable if not top performance. Consistency matters for deployment: a lower mean with a tighter distribution may be preferable to a high-ceiling, high-variance model in safety-critical settings.
+
+%% ============================================================
+\section{Discussion}
+\label{sec:discussion}
+%% ============================================================
+
+\paragraph{Two failure modes, not one.}
+
+The results reveal two distinct ways that larger models underperform smaller ones on CIPHER, which would be conflated by looking only at reported composites. In the GPT family, the failure is metacognitive: GPT-5.4 has strong calibration but weak executive, meaning it recognizes uncertainty but cannot act on it by producing a meaningfully better contingency plan. This holds after controlling for parse failures. In the Claude family, the failure is structural: Claude Opus~4.7 is the stronger metacognitive reasoner (higher valid-only composite, higher calibration) but produces malformed output on nearly one in seven instances. Treating these as the same phenomenon would mischaracterize both.
+
+\paragraph{Calibration and contingency planning as distinct capabilities.}
+
+Even within the GPT inversion, which survives parse-failure correction, the dissociation between calibration and executive is striking. GPT-5.4 has the highest calibration of any GPT model (0.802) and the lowest executive (0.169). Knowing what you do not know and acting on that knowledge in planning appear to be separable capabilities. One possible explanation is that larger models have been trained to produce well-calibrated uncertainty statements as a stylistic behavior, but have not been trained to generate plans that \emph{structurally differ} based on which specific unknowns are identified.
+
+\paragraph{The Gemini profile.}
+
+The Google model family shows a different failure mode from either the GPT or Claude families: high objective scores (strong task performance) combined with near-zero executive scores. Gemini 3.1 Pro Preview achieves the highest objective of any model (0.853) but ranks 10th on executive (0.121). This profile suggests models optimized for task performance on benchmarks with complete information, but that have not developed the capacity to reason about what they would do differently under adversarial uncertainty.
+
+\paragraph{Implications for deployment.}
+
+In deployment, LLMs frequently operate under genuine partial information: not masked tokens, but truly absent knowledge. A model that acknowledges uncertainty (high calibration) but cannot translate that awareness into a meaningfully different contingency plan (low executive) provides false comfort. A model that is metacognitively capable but unreliable in producing structured output (high valid-only composite, high failure rate) is similarly problematic. CIPHER distinguishes these cases and reveals that both are systematic at scale.
+
+%% ============================================================
+\section{Limitations}
+\label{sec:limitations}
+%% ============================================================
+
+\textbf{No human baseline.} The current paper lacks human participant data on CIPHER instances. A human baseline is important for construct validity and for understanding whether the benchmark difficulty is calibrated appropriately. We plan to collect this data; it is required for a complete treatment.
+
+\textbf{Seed stability.} Results are reported on a single seed-2026 dataset. While procedural generation ensures no two instances share vocabulary, replication across seeds is needed to confirm that score rankings are not artifacts of the particular instance draw. We plan to re-evaluate with additional seeds.
+
+\textbf{Per-instance data loss.} The Kaggle evaluation pipeline used \texttt{remove\_run\_files=True}, destroying per-instance response data. All bootstrap analyses use synthetic per-instance scores reconstructed from aggregate statistics rather than true instance-level scores. While the aggregate means are accurate (verified against run logs), the bootstrap CIs are therefore approximate. Re-running to collect true per-instance data would require approximately \$50--150 in API costs.
+
+\textbf{Construct validity sample size.} The correlation analysis in Table~\ref{tab:validity} uses only $n=8$--$9$ models with published benchmark scores, giving low statistical power. The non-significant correlations are consistent with CIPHER measuring something distinct from MMLU/GPQA/MATH-500, but do not establish independence. Larger model coverage is needed for strong construct validity claims.
+
+\textbf{Frontier model scope.} We evaluate 11 models from 6 families. Open-source models below 31B parameters and specialist models are not included. Extending coverage is a priority for follow-up work.
+
+\textbf{Executive dimension design.} The adversarial world construction (replacing hidden rule effects with \texttt{zero\_flux}) is a specific, conservative worst-case choice. Alternative adversarial constructions might yield different absolute executive scores, though the relative rankings are validated as robust under alternative scoring weights.
+
+\textbf{Single-objective world.} All instances use the same objective function form. Generalizability to other objective structures is not directly tested; the robustness check with two alternative objectives (applied to baselines) provides partial evidence.
+
+%% ============================================================
+\section{Conclusion}
+\label{sec:conclusion}
+%% ============================================================
+
+CIPHER provides a contamination-proof, four-dimensional measure of LLM metacognition that cannot be gamed by any single strategy. The benchmark reveals that aggregate composite scores conceal two qualitatively different failure modes: a genuine metacognitive deficit in contingency planning (GPT family, robust to parse-failure correction) and a format reliability deficit that reduces deployment utility independently of latent metacognitive skill (Claude family, where Opus is the stronger reasoner on valid responses but fails to produce structured output on 13.7\% of instances).
+
+The complete-omission hiding mechanism is the key enabling design: by removing hidden rules entirely rather than masking tokens, CIPHER forces models to reason about structural absence of information, the form of uncertainty most relevant to real-world deployment. The four-dimensional scoring structure ensures that no single capability is sufficient, and that each dimension measures something distinct (confirmed by low within-CIPHER inter-dimension correlations and near-zero correlations with external benchmarks, subject to the power limitations discussed in Section~\ref{sec:limitations}).
+
+The dataset, code, evaluation pipeline, and analysis scripts are released to support reproduction and extension of these results.
+
+\begin{ack}
+[Anonymized for submission.]
+\end{ack}
+
+\bibliographystyle{abbrvnat}
+\bibliography{cipher_refs}
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+\appendix
+
+\section{World Model Details}
+\label{app:world}
+
+\subsection{Trigger Kinds}
+
+\begin{center}
+\begin{tabular}{ll}
+\toprule
+Kind & Predicate \\
+\midrule
+\texttt{phase\_eq}       & $\text{phase}(E_i) = k$ \\
+\texttt{flux\_eq}        & $\text{flux}(E_i) = k$ \\
+\texttt{phase\_gt}       & $\text{phase}(E_i) > k$ \\
+\texttt{flux\_gt}        & $\text{flux}(E_i) > k$ \\
+\texttt{parity\_odd}     & $\text{phase}(E_i) \bmod 2 = 1$ \\
+\texttt{parity\_even}    & $\text{phase}(E_i) \bmod 2 = 0$ \\
+\texttt{phase\_eq\_phase}& $\text{phase}(E_i) = \text{phase}(E_j)$ \\
+\bottomrule
+\end{tabular}
+\end{center}
+
+\subsection{Effect Kinds}
+
+\begin{center}
+\begin{tabular}{ll}
+\toprule
+Kind & Operation \\
+\midrule
+\texttt{flux\_add}    & $\text{flux}(E_t) \mathrel{+}= \delta \pmod 7$ \\
+\texttt{phase\_add}   & $\text{phase}(E_t) \mathrel{+}= \delta \pmod 7$ \\
+\texttt{align\_phase} & $\text{phase}(E_t) \leftarrow \text{phase}(E_s)$ \\
+\texttt{swap\_pf}     & $(\text{phase}(E_t),\, \text{flux}(E_t)) \leftarrow (\text{flux}(E_t),\, \text{phase}(E_t))$ \\
+\texttt{zero\_flux}   & $\text{flux}(E_t) \leftarrow 0$ \\
+\bottomrule
+\end{tabular}
+\end{center}
+
+\section{By-Difficulty Results}
+\label{app:difficulty}
+
+\begin{table}[h]
+\centering
+\caption{Composite scores by difficulty stratum.}
+\begin{tabular}{lccc}
+\toprule
+Model & Easy (n=250) & Medium (n=500) & Hard (n=250) \\
+\midrule
+GPT-5.4 Nano             & 0.638 & 0.632 & 0.624 \\
+GPT-5.4 mini             & 0.639 & 0.628 & 0.619 \\
+Gemini 3 Flash Preview   & 0.632 & 0.626 & 0.614 \\
+Claude Sonnet 4.6        & 0.602 & 0.634 & 0.622 \\
+Gemini 3.1 Pro Preview   & 0.638 & 0.621 & 0.607 \\
+DeepSeek V3.2            & 0.602 & 0.607 & 0.606 \\
+Claude 4.5 Haiku         & 0.590 & 0.603 & 0.610 \\
+Gemma 4 31B              & 0.588 & 0.595 & 0.586 \\
+Claude Opus 4.7          & 0.598 & 0.595 & 0.573 \\
+Qwen 3 Next 80B Instruct & 0.562 & 0.595 & 0.586 \\
+GPT-5.4                  & 0.536 & 0.515 & 0.534 \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+Scores are stable across difficulty levels ($\pm0.02$--$0.03$), confirming the benchmark is neither trivially easy nor broken at hard difficulty.
+
+\section{Objective Function Robustness}
+\label{app:obj_robustness}
+
+To verify that rankings do not depend on the specific objective function, we ran the three stubs under two alternative objectives: (A) $\sum_i (\text{phase}_i + \text{flux}_i) \bmod 7$ and (B) $\max(\text{flux}_i) - \min(\text{phase}_i)$. Rank ordering of stub baselines was stable across all three (stub-random $>$ stub-greedy $>$ stub-noop), confirming the metacognitive structure drives the results, not the specific objective form.
+
+\section{Dataset Documentation (Croissant Summary)}
+\label{app:croissant}
+
+The dataset is documented with a Croissant metadata file including the following Responsible AI fields: intended use (LLM metacognition evaluation), known limitations (synthetic worlds; no naturalistic language), data source (procedural generation; no human data collected; no personal information), license (CC-BY 4.0), and contact information. The full Croissant file is included with the OpenReview submission.
+
+\newpage
+\input{checklist.tex}
+
+\end{document}
