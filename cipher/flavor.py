@@ -23,7 +23,7 @@ from dataclasses import dataclass
 from typing import List
 
 
-# ---- Invented vocabulary pools (all nonsense, deliberately) ----
+# Invented vocabulary pools (all nonsense, deliberately)
 
 WORLD_NAMES = [
     "Zorath", "Quelian", "Vythra", "Orlen", "Thresh", "Miraxi", "Kelvros",

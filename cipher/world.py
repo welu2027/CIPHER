@@ -19,7 +19,7 @@ from typing import Callable, List, Literal, Tuple
 MODULUS = 7  # property space is Z_7
 MAX_ENTITIES = 5
 
-# ---------- State ----------
+# State
 
 @dataclass(frozen=True)
 class EntityState:
@@ -50,7 +50,7 @@ class State:
         return len(self.entities)
 
 
-# ---------- Triggers ----------
+# Triggers
 
 TriggerKind = Literal["phase_eq", "flux_eq", "phase_gt", "flux_gt", "parity_odd", "parity_even", "phase_eq_phase"]
 
@@ -98,7 +98,7 @@ class Trigger:
         return f"<{kind} E{i} k={k}>"
 
 
-# ---------- Effects ----------
+# Effects
 
 EffectKind = Literal["flux_add", "phase_add", "align_phase", "swap_pf", "zero_flux"]
 
@@ -139,7 +139,7 @@ class Effect:
         return f"<{kind} E{target}>"
 
 
-# ---------- Rules ----------
+# Rules
 
 @dataclass(frozen=True)
 class Rule:
@@ -157,7 +157,7 @@ class Rule:
                 f"THEN {self.effect.describe(reveal_effect)}")
 
 
-# ---------- Actions ----------
+# Actions
 
 ActionKind = Literal["pulse", "damp", "shift", "unshift", "align", "observe", "wait"]
 
@@ -197,7 +197,7 @@ def all_actions(n_entities: int) -> List[Action]:
     return acts
 
 
-# ---------- World ----------
+# World
 
 @dataclass
 class World:
