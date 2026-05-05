@@ -1,0 +1,233 @@
+Loaded 16 models: GPT-5.4 Nano, GPT-5.4 mini, GPT-5.4, GPT-5.5, Gemini 3 Flash Preview, Gemini 3.1 Pro Preview, Gemini 2.5 Pro, Gemini 2.5 Flash, Claude Sonnet 4.6, Claude Opus 4.6, Claude Opus 4.5, Claude Opus 4.7, Claude 4.5 Haiku, DeepSeek V3.2, Qwen 3 Next 80B Instruct, Gemma 4 31B
+
+======================================================================
+  1. PAIRED COMPARISONS — EFFECT SIZES (CENTRAL FINDING)
+======================================================================
+  delta=mean(A-B), win_rate=P(A>B), d_z=paired Cohen's d
+  95% CI from empirical bootstrap (n_boot=10000, seed=42)
+
+
+GPT inversion: GPT-5.4 mini vs GPT-5.4
+  Dim                 A      B    delta              95% CI   win%     d_z
+  ----------------------------------------------------------------------
+  composite       0.629  0.554   +0.075  [+0.066, +0.083]   71%  +0.567
+  objective       0.485  0.490   -0.004  [-0.018, +0.010]   48%  -0.018
+  calibration     0.844  0.846   -0.001  [-0.008, +0.006]   37%  -0.010
+  attention       0.672  0.677   -0.007  [-0.039, +0.027]   35%  -0.013
+  executive       0.567  0.179   +0.389  [+0.374, +0.404]   91%  +1.676
+  (d_z: |0.2|=small, |0.5|=medium, |0.8|=large)
+
+  [appendix] sign-test z and p-value:
+    composite      sign-z=  13.1  p=0.0000
+    objective      sign-z=  -0.7  p=0.4931
+    calibration    sign-z=  -3.2  p=0.0012
+    attention      sign-z=   0.3  p=0.7845
+    executive      sign-z=  26.4  p=0.0000
+
+Claude inversion: Sonnet 4.6 vs Opus 4.7
+  Dim                 A      B    delta              95% CI   win%     d_z
+  ----------------------------------------------------------------------
+  composite       0.657  0.626   +0.030  [+0.021, +0.039]   60%  +0.233
+  objective       0.563  0.506   +0.057  [+0.042, +0.072]   60%  +0.261
+  calibration     0.787  0.763   +0.023  [+0.018, +0.029]   21%  +0.291
+  attention       0.674  0.677   -0.010  [-0.045, +0.025]   35%  -0.020
+  executive       0.644  0.613   +0.033  [+0.022, +0.045]   45%  +0.191
+  (d_z: |0.2|=small, |0.5|=medium, |0.8|=large)
+
+  [appendix] sign-test z and p-value:
+    composite      sign-z=   5.7  p=0.0000
+    objective      sign-z=   5.9  p=0.0000
+    calibration    sign-z=   7.7  p=0.0000
+    attention      sign-z=   0.1  p=0.9013
+    executive      sign-z=   3.7  p=0.0002
+
+======================================================================
+  1b. CALIBRATION vs EXECUTIVE DISSOCIATION
+======================================================================
+
+  Comparison               Dim               delta              95% CI   win%     d_z
+  --------------------------------------------------------------------------
+  GPT mini - GPT full      calibration      -0.001  [-0.008, +0.006]   37%  -0.010
+  GPT mini - GPT full      executive        +0.389  [+0.374, +0.404]   91%  +1.676
+  Sonnet - Opus 4.7        calibration      +0.023  [+0.018, +0.029]   21%  +0.291
+  Sonnet - Opus 4.7        executive        +0.033  [+0.021, +0.045]   45%  +0.191
+
+======================================================================
+  1c. PER-MODEL BOOTSTRAP CIs (95%, n_boot=10000)
+======================================================================
+
+  Model                        Dim              Mean              95% CI
+  ------------------------------------------------------------------------
+  GPT-5.4 Nano                 composite       0.632  [0.626, 0.638]
+  GPT-5.4 Nano                 objective       0.488  [0.479, 0.498]
+  GPT-5.4 Nano                 calibration     0.837  [0.832, 0.841]
+  GPT-5.4 Nano                 attention       0.644  [0.622, 0.668]
+  GPT-5.4 Nano                 executive       0.617  [0.608, 0.626]
+  GPT-5.4 mini                 composite       0.629  [0.623, 0.634]
+  GPT-5.4 mini                 objective       0.485  [0.476, 0.495]
+  GPT-5.4 mini                 calibration     0.844  [0.839, 0.849]
+  GPT-5.4 mini                 attention       0.672  [0.650, 0.695]
+  GPT-5.4 mini                 executive       0.567  [0.555, 0.579]
+  GPT-5.4                      composite       0.554  [0.548, 0.560]
+  GPT-5.4                      objective       0.490  [0.480, 0.499]
+  GPT-5.4                      calibration     0.846  [0.841, 0.851]
+  GPT-5.4                      attention       0.677  [0.654, 0.700]
+  GPT-5.4                      executive       0.179  [0.171, 0.187]
+  GPT-5.5                      composite       0.586  [0.579, 0.593]
+  GPT-5.5                      objective       0.765  [0.752, 0.779]
+  GPT-5.5                      calibration     0.766  [0.763, 0.769]
+  GPT-5.5                      attention       0.505  [0.479, 0.530]
+  GPT-5.5                      executive       0.131  [0.124, 0.138]
+  Gemini 3 Flash Preview       composite       0.624  [0.618, 0.631]
+  Gemini 3 Flash Preview       objective       0.749  [0.736, 0.763]
+  Gemini 3 Flash Preview       calibration     0.758  [0.756, 0.760]
+  Gemini 3 Flash Preview       attention       0.676  [0.653, 0.699]
+  Gemini 3 Flash Preview       executive       0.187  [0.175, 0.199]
+  Gemini 3.1 Pro Preview       composite       0.622  [0.615, 0.628]
+  Gemini 3.1 Pro Preview       objective       0.853  [0.843, 0.863]
+  Gemini 3.1 Pro Preview       calibration     0.753  [0.751, 0.754]
+  Gemini 3.1 Pro Preview       attention       0.553  [0.527, 0.578]
+  Gemini 3.1 Pro Preview       executive       0.121  [0.116, 0.127]
+  Gemini 2.5 Pro               composite       0.643  [0.635, 0.651]
+  Gemini 2.5 Pro               objective       0.669  [0.653, 0.686]
+  Gemini 2.5 Pro               calibration     0.881  [0.876, 0.886]
+  Gemini 2.5 Pro               attention       0.652  [0.621, 0.681]
+  Gemini 2.5 Pro               executive       0.290  [0.273, 0.308]
+  Gemini 2.5 Flash             composite       0.617  [0.609, 0.625]
+  Gemini 2.5 Flash             objective       0.654  [0.640, 0.667]
+  Gemini 2.5 Flash             calibration     0.808  [0.803, 0.814]
+  Gemini 2.5 Flash             attention       0.625  [0.597, 0.653]
+  Gemini 2.5 Flash             executive       0.305  [0.289, 0.322]
+  Claude Sonnet 4.6            composite       0.657  [0.652, 0.663]
+  Claude Sonnet 4.6            objective       0.563  [0.553, 0.573]
+  Claude Sonnet 4.6            calibration     0.787  [0.782, 0.791]
+  Claude Sonnet 4.6            attention       0.674  [0.650, 0.697]
+  Claude Sonnet 4.6            executive       0.644  [0.636, 0.653]
+  Claude Opus 4.6              composite       0.684  [0.678, 0.690]
+  Claude Opus 4.6              objective       0.566  [0.555, 0.577]
+  Claude Opus 4.6              calibration     0.902  [0.900, 0.904]
+  Claude Opus 4.6              attention       0.672  [0.648, 0.696]
+  Claude Opus 4.6              executive       0.630  [0.621, 0.640]
+  Claude Opus 4.5              composite       0.663  [0.658, 0.669]
+  Claude Opus 4.5              objective       0.503  [0.493, 0.513]
+  Claude Opus 4.5              calibration     0.877  [0.873, 0.881]
+  Claude Opus 4.5              attention       0.676  [0.653, 0.698]
+  Claude Opus 4.5              executive       0.664  [0.655, 0.673]
+  Claude Opus 4.7              composite       0.626  [0.620, 0.632]
+  Claude Opus 4.7              objective       0.506  [0.495, 0.517]
+  Claude Opus 4.7              calibration     0.763  [0.761, 0.766]
+  Claude Opus 4.7              attention       0.677  [0.652, 0.701]
+  Claude Opus 4.7              executive       0.613  [0.605, 0.620]
+  Claude 4.5 Haiku             composite       0.605  [0.599, 0.610]
+  Claude 4.5 Haiku             objective       0.500  [0.491, 0.509]
+  Claude 4.5 Haiku             calibration     0.750  [0.750, 0.750]
+  Claude 4.5 Haiku             attention       0.676  [0.653, 0.699]
+  Claude 4.5 Haiku             executive       0.534  [0.527, 0.541]
+  DeepSeek V3.2                composite       0.606  [0.600, 0.611]
+  DeepSeek V3.2                objective       0.478  [0.468, 0.487]
+  DeepSeek V3.2                calibration     0.763  [0.760, 0.765]
+  DeepSeek V3.2                attention       0.672  [0.649, 0.695]
+  DeepSeek V3.2                executive       0.567  [0.558, 0.575]
+  Qwen 3 Next 80B Instruct     composite       0.618  [0.612, 0.624]
+  Qwen 3 Next 80B Instruct     objective       0.483  [0.474, 0.493]
+  Qwen 3 Next 80B Instruct     calibration     0.839  [0.835, 0.844]
+  Qwen 3 Next 80B Instruct     attention       0.622  [0.598, 0.647]
+  Qwen 3 Next 80B Instruct     executive       0.574  [0.566, 0.581]
+  Gemma 4 31B                  composite       0.603  [0.596, 0.610]
+  Gemma 4 31B                  objective       0.737  [0.724, 0.750]
+  Gemma 4 31B                  calibration     0.770  [0.767, 0.773]
+  Gemma 4 31B                  attention       0.676  [0.652, 0.698]
+  Gemma 4 31B                  executive       0.087  [0.079, 0.095]
+
+======================================================================
+  2. CONSTRUCT VALIDITY — PEARSON r WITH PUBLIC BENCHMARKS
+======================================================================
+
+  Models in intersection: 16
+  GPT-5.4 Nano, GPT-5.4 mini, GPT-5.4, GPT-5.5, Gemini 3 Flash Preview, Gemini 3.1 Pro Preview, Gemini 2.5 Pro, Gemini 2.5 Flash, Claude Sonnet 4.6, Claude Opus 4.6, Claude Opus 4.5, Claude Opus 4.7, Claude 4.5 Haiku, DeepSeek V3.2, Qwen 3 Next 80B Instruct, Gemma 4 31B
+
+  CIPHER dim                          MMLU              GPQA_Diamond                  MATH_500
+  --------------------------------------------------------------------------------------
+  composite         r=-0.036,ρ=-0.190(n=8)    r=-0.143,ρ=-0.095(n=8)    r=-0.105,ρ=-0.300(n=9)
+  objective         r=+0.525,ρ=+0.619(n=8)    r=+0.594,ρ=+0.548(n=8)    r=+0.082,ρ=-0.083(n=9)
+  calibration       r=-0.245,ρ=-0.095(n=8)    r=+0.022,ρ=+0.214(n=8)    r=-0.322,ρ=-0.500(n=9)
+  attention         r=-0.313,ρ=+0.143(n=8)    r=-0.473,ρ=+0.095(n=8)    r=-0.519,ρ=-0.433(n=9)
+  executive         r=-0.462,ρ=-0.357(n=8)    r=-0.649,ρ=-0.381(n=8)    r=+0.011,ρ=+0.050(n=9)
+
+  * p < 0.05. Both Pearson r and Spearman rho reported.
+  Low |r| with MMLU/GPQA = CIPHER measures something distinct.
+  Negative r for calibration/executive = larger models score LOWER on CIPHER.
+
+  Within-CIPHER dimension correlations across models (aggregate means):
+    calibration vs executive: r=+0.349, rho=+0.376 (p=0.188)
+    objective vs calibration: r=-0.381, rho=-0.232 (p=0.150)
+    objective vs executive: r=-0.805, rho=-0.544 (p=0.002)*
+    attention vs executive: r=+0.467, rho=+0.168 (p=0.076)
+    attention vs calibration: r=+0.253, rho=-0.038 (p=0.342)
+
+======================================================================
+  3. WEIGHTING ROBUSTNESS
+======================================================================
+
+  Model                           Original      Equal         Plan-heavy    Meta-heavy
+  --------------------------------------------------------------------------------
+  GPT-5.4 Nano                  0.632(# 5)  0.647(# 4)  0.601(#10)  0.675(# 4)
+  GPT-5.4 mini                  0.629(# 6)  0.642(# 5)  0.597(#12)  0.674(# 5)
+  GPT-5.4                       0.554(#16)  0.548(#15)  0.542(#16)  0.599(#14)
+  GPT-5.5                       0.586(#15)  0.542(#16)  0.631(# 7)  0.573(#16)
+  Gemini 3 Flash Preview        0.624(# 8)  0.593(#12)  0.656(# 3)  0.622(#12)
+  Gemini 3.1 Pro Preview        0.622(# 9)  0.570(#13)  0.678(# 1)  0.596(#15)
+  Gemini 2.5 Pro                0.643(# 4)  0.623(# 8)  0.652(# 4)  0.663(# 6)
+  Gemini 2.5 Flash              0.617(#11)  0.598(#11)  0.628(# 9)  0.631(#11)
+  Claude Sonnet 4.6             0.657(# 3)  0.667(# 3)  0.637(# 6)  0.685(# 3)
+  Claude Opus 4.6               0.684(# 1)  0.693(# 1)  0.659(# 2)  0.723(# 1)
+  Claude Opus 4.5               0.663(# 2)  0.680(# 2)  0.628(# 8)  0.709(# 2)
+  Claude Opus 4.7               0.626(# 7)  0.640(# 6)  0.599(#11)  0.660(# 8)
+  Claude 4.5 Haiku              0.605(#13)  0.615(#10)  0.582(#14)  0.638(#10)
+  DeepSeek V3.2                 0.606(#12)  0.620(# 9)  0.577(#15)  0.644(# 9)
+  Qwen 3 Next 80B Instruct      0.618(#10)  0.630(# 7)  0.589(#13)  0.661(# 7)
+  Gemma 4 31B                   0.603(#14)  0.567(#14)  0.637(# 5)  0.603(#13)
+
+  Spearman rank correlation vs Original weights:
+    vs Equal     (25/25/25/25): rho=0.882 (p=0.001)
+    vs Plan-heavy(50/20/15/15): rho=0.441 (p=0.095)
+    vs Meta-heavy(20/35/25/20): rho=0.865 (p=0.001)
+
+======================================================================
+  4. DIFFICULTY BREAKDOWN — EMPIRICAL BOOTSTRAP PER STRATUM
+======================================================================
+
+  GPT family: GPT-5.4 mini - GPT-5.4 composite diff by stratum
+  Stratum       A      B    delta              95% CI   win%     d_z
+  ------------------------------------------------------------------
+  easy      0.637  0.557   +0.091  [+0.076, +0.106]   77%  +0.759
+  medium    0.620  0.551   +0.062  [+0.049, +0.074]   67%  +0.445
+  hard      0.638  0.557   +0.085  [+0.069, +0.101]   74%  +0.665
+
+  GPT family: calibration vs executive by stratum
+  Stratum  cal delta  cal win%  cal d_z  exe delta  exe win%  exe d_z
+  ----------------------------------------------------------------
+  easy      +0.018      48%   +0.151   +0.407      91%   +1.692
+  medium    -0.008      34%   -0.067   +0.376      90%   +1.613
+  hard      -0.008      33%   -0.074   +0.397      93%   +1.801
+
+  Claude family: Claude Sonnet 4.6 - Claude Opus 4.7 composite diff by stratum
+  Stratum       A      B    delta              95% CI   win%     d_z
+  ------------------------------------------------------------------
+  easy      0.657  0.626   +0.036  [+0.020, +0.052]   59%  +0.295
+  medium    0.657  0.625   +0.030  [+0.018, +0.043]   61%  +0.228
+  hard      0.659  0.627   +0.024  [+0.006, +0.043]   58%  +0.181
+
+  Claude family: calibration vs executive by stratum
+  Stratum  cal delta  cal win%  cal d_z  exe delta  exe win%  exe d_z
+  ----------------------------------------------------------------
+  easy      +0.031      27%   +0.341   +0.033      47%   +0.184
+  medium    +0.019      18%   +0.270   +0.030      45%   +0.171
+  hard      +0.023      24%   +0.279   +0.041      43%   +0.246
+
+======================================================================
+  5. PARSE FAILURE ANALYSIS
+======================================================================
+
+  Model                         Failures    Rate  Composite (valid)  Composite (all)
+  --------------------------------------------------------------------------------
