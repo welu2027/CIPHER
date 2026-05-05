@@ -443,22 +443,17 @@ for family, (name_a, name_b) in [
         print(f"  {stratum:<8} {cd:>+7.3f} {cwr:>8.0%} {cdz:>+8.3f}  {ed:>+7.3f} {ewr:>8.0%} {edz:>+8.3f}")
 
 # ---------------------------------------------------------------------------
-# 5. Parse failure analysis
+# 5. Valid instance counts (failures excluded by clean_and_rebuild.py)
 # ---------------------------------------------------------------------------
 
-section("5. PARSE FAILURE ANALYSIS")
+section("5. VALID INSTANCE COUNTS (failures already excluded)")
 
-print(f"\n  {'Model':<28} {'Failures':>9} {'Rate':>7} {'Composite (valid)':>18} {'Composite (all)':>16}")
-print(f"  {'-'*80}")
-
+print(f"\n  {'Model':<28} {'n_valid':>8} {'of 1000':>8} {'excluded%':>10}")
+print(f"  {'-'*56}")
 for name in all_model_names:
-    rows   = MODEL_DATA[name]
-    fails  = sum(1 for r in rows if r["parse_error"])
-    valid  = [r for r in rows if not r["parse_error"]]
-    rate   = fails / len(rows)
-    mv     = sum(r["composite"] for r in valid) / max(len(valid), 1)
-    ma     = mean_dim(rows, "composite")
-    print(f"  {name:<28} {fails:>9}  {rate:>6.1%}  {mv:>18.3f}  {ma:>16.3f}")
+    n = len(MODEL_DATA[name])
+    excl = 1000 - n
+    print(f"  {name:<28} {n:>8}  {'1000':>8}  {excl/10:>9.1f}%")
 
 # ---------------------------------------------------------------------------
 # 6. Score variance across models
