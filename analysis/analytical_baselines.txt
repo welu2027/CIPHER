@@ -1,0 +1,77 @@
+----------------------------------------------------------------------------
+CIPHER ANALYTICAL BASELINES
+----------------------------------------------------------------------------
+
+A. CALIBRATION SCORE BOUNDS (analytical — no simulation)
+
+Difficulty  n_comps  n_hidden   Perfect   All-known   All-unknown
+----------------------------------------------------------------------------
+  easy           16         4    1.0000      0.7500        0.2500
+  medium         20         8    1.0000      0.6000        0.4000
+  hard           24        12    1.0000      0.5000        0.5000
+
+Notes:
+  Perfect calibration : claim known/unknown exactly right at confidence=1.0
+                        Brier=0 => calibration=1.000 for all difficulties.
+  All-known           : overconfidence — claims every component is known.
+                        Penalised for hidden components. Score falls with n_hidden.
+  All-unknown         : underconfidence — claims nothing is known.
+                        Penalised for visible components. Score rises with n_hidden.
+
+B. OBJECTIVE SCORE FLOOR (simulation over 1000 instances)
+
+Strategy            easy    medium      hard   overall  n
+----------------------------------------------------------------------------
+  No-op           0.4656    0.4882    0.4784    0.4801  1000
+  Random          0.4468    0.4863    0.4684    0.4719  1000
+
+  Normalization: (raw - worst_obj) / (best_obj - worst_obj)
+  No-op    = [wait]*7 (rules still fire each step, agent takes no useful action)
+  Random   = uniform-random from all_actions per step, mean over 20 seeds
+
+C. n_HIDDEN ABLATION (existing results by difficulty)
+
+  Difficulty encodes n_hidden: easy=1, medium=2, hard=3
+  Co-variates: n_entities (3 easy / 4 med,hard), n_rules (4/5/6)
+
+  Model                         easy obj   med obj  hard obj   delta e-h
+----------------------------------------------------------------------------
+  GPT-5.4 Nano                    0.4799    0.4938    0.4859     -0.0060
+  GPT-5.4 mini                    0.5000    0.4755    0.4897      0.0104
+  GPT-5.4                         0.5155    0.4778    0.4874      0.0282
+  GPT-5.5                         0.7607    0.7804    0.7395      0.0212
+  Gemini 3 Flash Preview          0.7580    0.7464    0.7455      0.0125
+  Gemini 3.1 Pro Preview          0.8634    0.8506    0.8477      0.0157
+  Gemini 2.5 Pro                  0.6897    0.6696    0.6467      0.0430
+  Gemini 2.5 Flash                0.6574    0.6509    0.6557      0.0017
+  Claude Sonnet 4.6               0.5720    0.5640    0.5528      0.0192
+  Claude Opus 4.6                 0.5757    0.5499    0.5887     -0.0130
+  Claude Opus 4.5                 0.4883    0.5116    0.5017     -0.0134
+  Claude Opus 4.7                 0.5069    0.5078    0.5005      0.0064
+  Claude 4.5 Haiku                0.4931    0.5016    0.5041     -0.0110
+  DeepSeek V3.2                   0.4766    0.4801    0.4739      0.0026
+  Qwen 3 Next 80B Instruct        0.4805    0.4880    0.4772      0.0033
+  Gemma 4 31B                     0.7319    0.7321    0.7523     -0.0204
+
+  delta e-h: easy objective minus hard objective.
+  A large positive value means the model degrades more when rules are hidden.
+
+----------------------------------------------------------------------------
+INTERPRETATION NOTES
+----------------------------------------------------------------------------
+
+1. Calibration lower/upper bounds:
+   - Models scoring below all-known have LESS overconfidence than a naive oracle.
+   - Models scoring near 'perfect' (1.0) have excellent uncertainty quantification.
+   - The all-known/all-unknown gap narrows as n_hidden increases:
+     easy gap: 0.500,  medium gap: 0.200,  hard gap: 0.000
+
+2. Objective floor:
+   No-op    = 0.4801  (rules fire but agent contributes nothing)
+   Random   = 0.4719  (random actions, averaged over 20 seeds)
+   Any model scoring at or near these values is not planning effectively.
+
+3. n_hidden ablation:
+   Objective typically falls with difficulty. If a model's easy-hard delta is
+   near zero, it is either insensitive to uncertainty or saturation-floored.
+
