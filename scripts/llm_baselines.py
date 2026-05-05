@@ -46,7 +46,9 @@ if os.path.exists(_env_path):
         if not _line or _line.startswith("#") or "=" not in _line:
             continue
         _k, _v = _line.split("=", 1)
-        os.environ.setdefault(_k.strip(), _v.strip())
+        _k = _k.strip().lstrip("$").removeprefix("env:")  # handle $env:KEY syntax
+        _v = _v.strip().strip('"').strip("'")
+        os.environ.setdefault(_k, _v)
 
 from cipher.generator import Instance, generate_instance
 from cipher.prompt import build_prompt, SCHEMA_BLOCK
