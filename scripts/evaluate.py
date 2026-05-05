@@ -73,7 +73,7 @@ def _instance_from_record(rec: Dict[str, Any]) -> Instance:
     )
 
 
-# ---------- Agents (stubs) ----------
+# Agents (stubs
 
 def _all_claims_for(inst: Instance) -> List[Dict[str, Any]]:
     """Claims for all visible rules (known=True) and hidden rules (known=False)."""
@@ -172,7 +172,7 @@ def claude_agent(inst: Instance) -> Dict[str, Any]:
         messages=[{"role": "user", "content": prompt}],
     )
     text = "".join(b.text for b in msg.content if getattr(b, "type", "") == "text")
-    # be forgiving: extract the outermost JSON object
+    # extract the outermost JSON object
     start = text.find("{")
     end = text.rfind("}")
     if start == -1 or end == -1:
