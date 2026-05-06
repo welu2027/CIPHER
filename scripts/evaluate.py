@@ -134,6 +134,85 @@ def stub_random(inst: Instance) -> Dict[str, Any]:
     }
 
 
+def stub_cautious(inst: Instance) -> Dict[str, Any]:
+    """Heuristic baseline: perfect calibration + token probes + generic fallback.
+
+    Tests whether a model can game Executive/Calibration with pure caution:
+    - marks all hidden-rule components unknown (confidence 0.9) — ideal calibration
+    - marks all visible-rule components known (confidence 0.9)
+    - ranks all hidden labels in order (H0, H1, ...)
+    - issues 2 observe probes on E0 and E1 (within budget)
+    - final plan: a single wait (maximally conservative)
+    - contingency: a shift on E0 (different from wait, so partial contingency credit)
+    """
+    n = inst.world.initial.n
+    mc = []
+    for gt in inst.metacog_ground_truth:
+        is_known = gt["true_known"]
+        mc.append({"rule_name": gt["rule_name"], "component": gt["component"],
+                   "known": is_known, "confidence": 0.9})
+    hidden_labels = _hidden_labels(inst)
+    probes = [{"kind": "observe", "i": 0}]
+    if n > 1:
+        probes.append({"kind": "observe", "i": 1})
+    return {
+        "metacog_assessment": mc,
+        "critical_unknowns_ranked": hidden_labels,
+        "exploratory_actions": probes,
+        "final_plan": [{"kind": "wait"}],
+        "self_judgment": {
+            "robustness_score": 30,
+            "risks_identified": [f"{lbl} unknown" for lbl in hidden_labels],
+            "alternative_if_unknown_X": {
+                "unknown": hidden_labels[0] if hidden_labels else "",
+                "plan": [{"kind": "shift", "i": 0}],
+            },
+        },
+    }
+
+
+def stub_probe_heavy(inst: Instance) -> Dict[str, Any]:
+    """Heuristic baseline: burn probe budget then visible-only greedy plan.
+
+    Tests whether shallow exploration alone can boost Executive:
+    - marks hidden rules unknown (confidence 0.5) — moderate calibration
+    - burns 3 observe probes across diverse entities
+    - remaining budget goes to visible-only oracle plan
+    - no meaningful contingency plan (same as final)
+    """
+    n = inst.world.initial.n
+    max_probes = inst.world.horizon // 2  # 3 for horizon=7
+    probe_entities = list(range(min(n, max_probes)))
+    probes = [{"kind": "observe", "i": e} for e in probe_entities]
+
+    visible_rules = tuple(inst.world.rules[i] for i in inst.visible_rule_indices)
+    from cipher.world import World as W
+    visible_world = W(initial=inst.world.initial,
+                      rules=visible_rules, horizon=inst.world.horizon)
+    _, best_plan = oracle_score(visible_world)
+    remaining = inst.world.horizon - len(probes)
+    plan_objs = [{"kind": a.kind, "i": a.i, "j": a.j}
+                 for a in best_plan[:max(0, remaining)]]
+
+    mc = []
+    for gt in inst.metacog_ground_truth:
+        is_known = gt["true_known"]
+        mc.append({"rule_name": gt["rule_name"], "component": gt["component"],
+                   "known": is_known, "confidence": 0.9 if is_known else 0.5})
+    hidden_labels = _hidden_labels(inst)
+    return {
+        "metacog_assessment": mc,
+        "critical_unknowns_ranked": hidden_labels,
+        "exploratory_actions": probes,
+        "final_plan": plan_objs,
+        "self_judgment": {
+            "robustness_score": 50,
+            "risks_identified": ["hidden rule effects unknown"],
+            "alternative_if_unknown_X": {},  # no contingency
+        },
+    }
+
+
 def stub_greedy(inst: Instance) -> Dict[str, Any]:
     """Runs oracle beam search on the VISIBLE rules only (ignores hidden rules).
     Achieves good plan quality when hidden rules don't fire, but claims perfect
@@ -225,6 +304,8 @@ AGENTS = {
     "stub-noop": stub_noop,
     "stub-random": stub_random,
     "stub-greedy": stub_greedy,
+    "stub-cautious": stub_cautious,
+    "stub-probe-heavy": stub_probe_heavy,
     "claude": claude_agent,
     "gemini": gemini_agent,
     "hf": hf_agent,
@@ -234,13 +315,15 @@ AGENTS = {
 def main():
     ap = argparse.ArgumentParser()
     ap.add_argument("--data", required=True)
-    ap.add_argument("--model", default="stub-greedy", choices=list(AGENTS))
+    ap.add_argument("--model", default="stub-greedy", choices=list(AGENTS.keys()))
     ap.add_argument("--out", default="results.json")
     ap.add_argument("--limit", type=int, default=None)
     ap.add_argument("--leaderboard", default="leaderboard.json",
                     help="Aggregate file; each run appends one row.")
     ap.add_argument("--label", default=None,
                     help="Optional label for this run (e.g. HF_MODEL string).")
+    ap.add_argument("--txt-out", default=None,
+                    help="Also write a human-readable summary to this .txt file.")
     args = ap.parse_args()
 
     agent = AGENTS[args.model]
@@ -312,15 +395,22 @@ def main():
     with open(lb_path, "w") as f:
         json.dump(board, f, indent=2)
 
-    print(json.dumps(summary, indent=2))
-    print(f"\nAppended to {lb_path} ({len(board)} rows total).")
-    print("\n--- Leaderboard (by composite) ---")
-    print(f"{'agent':<14}{'label':<45}{'n':>5}{'comp':>8}{'obj':>8}{'cal':>8}{'att':>8}{'exe':>8}")
+    lines = []
+    lines.append(json.dumps(summary, indent=2))
+    lines.append(f"\nAppended to {lb_path} ({len(board)} rows total).")
+    lines.append("\n--- Leaderboard (by composite) ---")
+    lines.append(f"{'agent':<14}{'label':<45}{'n':>5}{'comp':>8}{'obj':>8}{'cal':>8}{'att':>8}{'exe':>8}")
     for r in board:
-        print(f"{r['agent']:<14}{(r.get('label') or '-')[:44]:<45}"
-              f"{r['n']:>5}{r['mean_composite']:>8.3f}"
-              f"{r['mean_objective']:>8.3f}{r['mean_calibration']:>8.3f}"
-              f"{r['mean_attention']:>8.3f}{r['mean_executive']:>8.3f}")
+        lines.append(f"{r['agent']:<14}{(r.get('label') or '-')[:44]:<45}"
+                     f"{r['n']:>5}{r['mean_composite']:>8.3f}"
+                     f"{r['mean_objective']:>8.3f}{r['mean_calibration']:>8.3f}"
+                     f"{r['mean_attention']:>8.3f}{r['mean_executive']:>8.3f}")
+    output = "\n".join(lines)
+    print(output)
+    if args.txt_out:
+        with open(args.txt_out, "w") as f:
+            f.write(output + "\n")
+        print(f"Summary written to {args.txt_out}")
 
 
 if __name__ == "__main__":

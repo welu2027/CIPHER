@@ -1,0 +1,30 @@
+[
+  {
+    "timestamp": "2026-05-06T03:57:25Z",
+    "agent": "stub-probe-heavy",
+    "label": "stub-probe-heavy",
+    "data": "instances.jsonl",
+    "results_file": "analysis/stub_probe_heavy.json",
+    "model": "stub-probe-heavy",
+    "n": 1000,
+    "mean_composite": 0.7256685170361806,
+    "mean_objective": 0.7607386201033711,
+    "mean_calibration": 0.8969999999999996,
+    "mean_attention": 0.6760000000000028,
+    "mean_executive": 0.4998
+  },
+  {
+    "timestamp": "2026-05-06T03:56:26Z",
+    "agent": "stub-cautious",
+    "label": "stub-cautious",
+    "data": "instances.jsonl",
+    "results_file": "analysis/stub_cautious.json",
+    "model": "stub-cautious",
+    "n": 1000,
+    "mean_composite": 0.6806104182080401,
+    "mean_objective": 0.4807827965922972,
+    "mean_calibration": 0.9900000000000077,
+    "mean_attention": 0.6760000000000028,
+    "mean_executive": 0.6481821970036757
+  }
+]

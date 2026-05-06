@@ -1,0 +1,37 @@
+
+======================================================================
+  CIPHER SEED-STABILITY ANALYSIS
+======================================================================
+
+--- TRIGGER KIND FREQUENCY (fraction of rules) ---
+  Kind                    seed-2026    seed-2027    seed-2028    seed-2029  
+  flux_eq                    0.147     0.147     0.155     0.140
+  flux_gt                    0.142     0.145     0.144     0.142
+  parity_even                0.136     0.137     0.136     0.144
+  parity_odd                 0.142     0.139     0.147     0.145
+  phase_eq                   0.137     0.144     0.155     0.144
+  phase_eq_phase             0.147     0.149     0.128     0.139
+  phase_gt                   0.148     0.140     0.135     0.146
+  ------------------------------------------------------------
+  Cross-seed std            0.0060    0.0012    0.0037    0.0036    0.0072    0.0096    0.0059
+
+--- EFFECT KIND FREQUENCY (fraction of rules) ---
+  Kind                    seed-2026    seed-2027    seed-2028    seed-2029  
+  align_phase                0.207     0.201     0.196     0.194
+  flux_add                   0.195     0.192     0.196     0.204
+  phase_add                  0.199     0.209     0.201     0.196
+  swap_pf                    0.198     0.201     0.204     0.212
+  zero_flux                  0.201     0.197     0.203     0.194
+  ------------------------------------------------------------
+  Cross-seed std            0.0055    0.0054    0.0055    0.0059    0.0041
+
+--- ORACLE OBJECTIVE STATISTICS ---
+  Metric                     seed-2026       seed-2027       seed-2028       seed-2029     
+  oracle_best mean                20.941       19.765       19.726       19.729  (cross-seed std=0.601)
+  oracle_best std                  3.087        3.457        3.428        3.588  (cross-seed std=0.214)
+  oracle_worst mean               -8.313       -7.005       -7.047       -7.035  (cross-seed std=0.642)
+  oracle_span mean                29.254       26.770       26.773       26.764  (cross-seed std=1.243)
+  oracle_span std                  4.191        4.532        4.522        4.740  (cross-seed std=0.227)
+
+======================================================================
+

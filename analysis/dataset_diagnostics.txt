@@ -1,0 +1,55 @@
+
+======================================================================
+  CIPHER DATASET DIAGNOSTICS  (n=1000)
+======================================================================
+
+--- 1. PROMPT LENGTH (characters) ---
+  All:    min=3063  median=3253  mean=3250  max=3533
+  Easy  : min=3063  median=3127  mean=3130  max=3253  (n=250)
+  Medium: min=3180  median=3252  mean=3260  max=3401  (n=500)
+  Hard  : min=3274  median=3340  mean=3348  max=3533  (n=250)
+
+--- 2. TRIGGER KIND FREQUENCIES ---
+  phase_gt               742  (14.8%)
+  phase_eq_phase         735  (14.7%)
+  flux_eq                734  (14.7%)
+  parity_odd             712  (14.2%)
+  flux_gt                709  (14.2%)
+  phase_eq               687  (13.7%)
+  parity_even            681  (13.6%)
+
+--- 3. EFFECT KIND FREQUENCIES ---
+  align_phase           1033  (20.7%)
+  zero_flux             1006  (20.1%)
+  phase_add              995  (19.9%)
+  swap_pf                990  (19.8%)
+  flux_add               976  (19.5%)
+
+--- 4. HIDDEN-RULE COUNT DISTRIBUTION ---
+  Easy  : 1 hidden: 250 (100.0%)
+  Medium: 2 hidden: 500 (100.0%)
+  Hard  : 3 hidden: 250 (100.0%)
+
+--- 5. CHALLENGE RATE (hidden rules change oracle trajectory) ---
+  Instances where ≥1 hidden rule has non-zero impact: 537/1000 (53.7%)
+  Instances where all hidden rules have zero impact:  463/1000 (46.3%)
+
+--- 6. HIDDEN-RULE IMPACT DISTRIBUTION ---
+  Total hidden-rule slots evaluated: 2000
+  Near-zero impact (delta=0):        1297 (64.8%)
+  Material impact  (delta>0):        703 (35.1%)
+  Impact (all):    min=0  median=0  mean=2  max=23
+  Impact (>0 only): min=1  median=5  mean=6  max=23
+
+--- 7. BETTER-CONTINGENCY RATE ---
+  Instances where adversarial-world oracle > oracle-plan-on-adv-world:
+  504/1000 (50.4%)
+  (= fraction where a better contingency plan exists than the oracle's primary plan)
+
+  By difficulty:
+    Easy  : challenge=65/250 (26.0%)  better-contingency=69/250 (27.6%)
+    Medium: challenge=290/500 (58.0%)  better-contingency=265/500 (53.0%)
+    Hard  : challenge=182/250 (72.8%)  better-contingency=170/250 (68.0%)
+
+======================================================================
+

@@ -1,0 +1,15 @@
+{
+  "model": "stub-cautious",
+  "n": 1000,
+  "mean_composite": 0.6806104182080401,
+  "mean_objective": 0.4807827965922972,
+  "mean_calibration": 0.9900000000000077,
+  "mean_attention": 0.6760000000000028,
+  "mean_executive": 0.6481821970036757
+}
+
+Appended to leaderboard.json (1 rows total).
+
+--- Leaderboard (by composite) ---
+agent         label                                            n    comp     obj     cal     att     exe
+stub-cautious stub-cautious                                 1000   0.681   0.481   0.990   0.676   0.648

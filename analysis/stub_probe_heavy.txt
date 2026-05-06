@@ -1,0 +1,16 @@
+{
+  "model": "stub-probe-heavy",
+  "n": 1000,
+  "mean_composite": 0.7256685170361806,
+  "mean_objective": 0.7607386201033711,
+  "mean_calibration": 0.8969999999999996,
+  "mean_attention": 0.6760000000000028,
+  "mean_executive": 0.4998
+}
+
+Appended to leaderboard.json (2 rows total).
+
+--- Leaderboard (by composite) ---
+agent         label                                            n    comp     obj     cal     att     exe
+stub-probe-heavystub-probe-heavy                              1000   0.726   0.761   0.897   0.676   0.500
+stub-cautious stub-cautious                                 1000   0.681   0.481   0.990   0.676   0.648
