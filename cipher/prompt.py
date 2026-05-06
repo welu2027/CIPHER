@@ -117,3 +117,78 @@ def build_prompt(inst: Instance) -> str:
         + goal
         + "\n" + SCHEMA_BLOCK
     )
+
+
+def build_prompt_masked(inst: Instance) -> str:
+    """Masked-token variant: hidden rules are shown with all fields as '?'.
+
+    This is the comparison condition for the hiding-mechanism ablation.
+    A model can trivially achieve perfect calibration by scanning for '?'
+    markers rather than reasoning about structural absence of information.
+    """
+    fl = pick_flavor(inst.seed)
+    n = inst.world.initial.n
+    n_hidden = len(inst.hidden_rule_indices)
+    n_visible = len(inst.visible_rule_indices)
+
+    header = (
+        f"You are studying the {fl.world_name} {fl.object_word}, a closed "
+        f"system of {n} {fl.entity_pl} that has never been catalogued. Each "
+        f"{fl.entity_sg} has two measurable attributes - **{fl.phase_word}** "
+        f"and **{fl.flux_word}** - each an integer in the set {{0,1,2,3,4,5,6}} "
+        f"(all arithmetic is mod 7).\n\n"
+        f"Field agents have characterized {n_visible} of the governing "
+        f"{fl.rule_word.lower()}s. {n_hidden} additional "
+        f"{'law has' if n_hidden == 1 else 'laws have'} been detected but "
+        f"their specific parameters could not be measured - all fields are "
+        f"marked '?' below. Your task is to (1) judge what you truly know "
+        f"versus what is unknown, (2) rank which hidden {fl.rule_word.lower()}s "
+        f"matter most, (3) optionally issue exploratory probes, and (4) commit "
+        f"to a plan that maximizes the system's objective score.\n"
+    )
+
+    state_lines = []
+    for idx, e in enumerate(inst.world.initial.entities):
+        state_lines.append(
+            f"  {fl.entity(idx)} ({fl.entity_sg} {idx}): "
+            f"{fl.phase_word}={e.phase}, {fl.flux_word}={e.flux}"
+        )
+
+    rule_lines = []
+    for pos, rule_idx in enumerate(inst.visible_rule_indices):
+        r = inst.world.rules[rule_idx]
+        flavored = describe_rule(r, fl, pos)
+        rule_lines.append(f"  [{r.name}] {flavored}")
+
+    # Masked hidden rules: show structure but replace all values with '?'
+    masked_lines = []
+    for h_pos in range(n_hidden):
+        label = f"H{h_pos}"
+        masked_lines.append(
+            f"  [{label}] Edict {label}: whenever "
+            f"[{fl.phase_word}|{fl.flux_word}: ?] of E[?] [?] ?, "
+            f"[{fl.phase_word}|{fl.flux_word}: ?] of E[?] [?= ?]"
+        )
+
+    goal = (
+        f"\nObjective (to be maximized after your final plan executes): "
+        f"sum over {fl.entity_pl} of ({fl.phase_word} * {fl.flux_word} mod 7), "
+        f"minus 3 for each {fl.entity_sg} whose {fl.flux_word} ≥ 5 "
+        f"(an unstable regime).\n"
+        f"Action budget: at most {inst.world.horizon} actions total "
+        f"(exploratory + final plan combined). Probes consume budget.\n"
+    )
+
+    return (
+        header
+        + "\n---\nInitial readings:\n" + "\n".join(state_lines)
+        + f"\n\nCharacterized {fl.rule_word.lower()}s "
+          f"(fire in the listed order after every action):\n"
+        + "\n".join(rule_lines)
+        + f"\n\nPartially recovered {fl.rule_word.lower()}s "
+          f"(detected but parameters unknown - all fields marked '?'):\n"
+        + ("\n".join(masked_lines) if masked_lines
+           else f"  (none - all {fl.rule_word.lower()}s fully characterized)")
+        + goal
+        + "\n" + SCHEMA_BLOCK
+    )
