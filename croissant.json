@@ -11,7 +11,7 @@
   "name": "CIPHER",
   "description": "CIPHER (Calibrated Introspection via Partially Hidden Environment Rules) is a procedurally generated benchmark for evaluating metacognitive awareness and contingency planning in large language models. Each instance is a synthetic causal world governed by explicit rules, a subset of which is withheld from the model. Models are scored on four dimensions: objective plan quality, Brier-calibrated self-knowledge, attention to hidden-rule importance, and executive robustness.",
   "license": "https://creativecommons.org/licenses/by/4.0/",
-  "url": "https://anonymous.4open.science/r/CIPHER-87A0",
+  "url": "https://anonymous.4open.science/r/CIPHER-87A0/data/instances.jsonl",
   "version": "1.0.0",
   "cr:conformsTo": "http://mlcommons.org/croissant/1.0",
 
