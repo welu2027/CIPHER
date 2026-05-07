@@ -141,7 +141,7 @@ def _executive(resp: ParsedResponse, inst: Instance,
     """
     span = max(1, best_obj - worst_obj)
 
-    # --- Component A: probe quality ---
+    # Component A: probe quality
     hidden_entity_indices = set()
     for rule_idx in inst.hidden_rule_indices:
         r = inst.world.rules[rule_idx]
@@ -162,7 +162,7 @@ def _executive(resp: ParsedResponse, inst: Instance,
             probe_score += 0.2
     probe_score = min(1.0, probe_score)
 
-    # --- Component B: contingency quality ---
+    # Component B: contingency quality
     # Build an adversarial world where each hidden rule becomes zero_flux on
     # its effect target - a worst-case interpretation.
     from .world import Rule, Trigger, Effect, State
