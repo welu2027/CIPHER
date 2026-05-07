@@ -4,7 +4,21 @@ __pycache__/
 .DS_Store
 .env
 .claude/
-/analysis/results_jsons
-/analysis/offline_results.txt
+
+# Results and outputs
+/analysis/results_jsons/
+/analysis/models/
+/analysis/figures/
+/analysis/results.json
+/analysis/stub_cautious.json
+/analysis/stub_probe_heavy.json
+/analysis/*.txt
+leaderboard.json
+results_greedy.json
+results_noop.json
+results_random.json
+
+# Writing
 paper.txt
 writeup.md
+*.ipynb
