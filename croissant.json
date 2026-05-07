@@ -1,0 +1,88 @@
+{
+  "@context": {
+    "@language": "en",
+    "@vocab": "https://schema.org/",
+    "cr": "http://mlcommons.org/croissant/",
+    "rai": "http://mlcommons.org/croissant/RAI/",
+    "dct": "http://purl.org/dc/terms/",
+    "sc": "https://schema.org/"
+  },
+  "@type": "sc:Dataset",
+  "name": "CIPHER",
+  "description": "CIPHER (Calibrated Introspection via Partially Hidden Environment Rules) is a procedurally generated benchmark for evaluating metacognitive awareness and contingency planning in large language models. Each instance is a synthetic causal world governed by explicit rules, a subset of which is withheld from the model. Models are scored on four dimensions: objective plan quality, Brier-calibrated self-knowledge, attention to hidden-rule importance, and executive robustness.",
+  "license": "https://creativecommons.org/licenses/by/4.0/",
+  "url": "https://anonymous.4open.science/r/CIPHER-87A0",
+  "version": "1.0.0",
+  "cr:conformsTo": "http://mlcommons.org/croissant/1.0",
+
+  "rai:dataCollection": "All instances are procedurally generated using a seeded random process. No human-generated text, web scrapes, or real-world data were used. Invented vocabulary (entity names, property words, causal language) is generated fresh per instance from abstract mathematical rules to prevent memorization from training data.",
+  "rai:dataCollectionType": "Programmatically generated",
+  "rai:dataUseCases": "Evaluating metacognitive awareness and contingency planning capabilities of large language models. Intended for use as a benchmark to measure whether models can recognize the limits of their knowledge and form robust plans under uncertainty.",
+  "rai:dataBiases": "The benchmark reflects the design choices of its authors regarding what constitutes metacognitive reasoning. The synthetic world model (Z_7 arithmetic, specific trigger/effect families) may not cover all real-world uncertainty structures. Difficulty is controlled by number of hidden rules, entities, and horizon length, which may not capture all axes of task complexity.",
+  "rai:personalSensitiveInformation": "None. The dataset contains no personal, sensitive, or identifying information. All content is synthetically generated.",
+  "rai:dataLimitations": "CIPHER operates in a synthetic text-only environment. Results may not generalize to real-world planning tasks with continuous state spaces, partial observability from perception, or multi-agent dynamics. The benchmark evaluates a specific operationalization of metacognition and should not be treated as a comprehensive measure of general epistemic awareness.",
+  "rai:annotationsPerItem": "Ground-truth labels are programmatically derived from the generative process (oracle beam search, rule visibility flags, Brier calibration targets). No human annotation was performed.",
+
+  "distribution": [
+    {
+      "@type": "cr:FileObject",
+      "@id": "instances-file",
+      "name": "instances.jsonl",
+      "description": "1000 benchmark instances in JSON Lines format. Each line is one self-contained instance.",
+      "contentUrl": "data/instances.jsonl",
+      "encodingFormat": "application/jsonlines",
+      "sha256": "399e45c035657557951fbe83e41d665916c82f45af0a11f0506e5bd90c5cbaf1"
+    }
+  ],
+
+  "recordSet": [
+    {
+      "@type": "cr:RecordSet",
+      "@id": "instances",
+      "name": "instances",
+      "description": "One record per benchmark instance.",
+      "field": [
+        {
+          "@type": "cr:Field",
+          "@id": "instances/id",
+          "name": "id",
+          "description": "Unique instance identifier (e.g. cipher-0000).",
+          "dataType": "sc:Text",
+          "source": { "fileObject": { "@id": "instances-file" }, "extract": { "jsonPath": "$.id" } }
+        },
+        {
+          "@type": "cr:Field",
+          "@id": "instances/seed",
+          "name": "seed",
+          "description": "Random seed used to generate this instance.",
+          "dataType": "sc:Integer",
+          "source": { "fileObject": { "@id": "instances-file" }, "extract": { "jsonPath": "$.seed" } }
+        },
+        {
+          "@type": "cr:Field",
+          "@id": "instances/difficulty",
+          "name": "difficulty",
+          "description": "Difficulty stratum: easy, medium, or hard.",
+          "dataType": "sc:Text",
+          "source": { "fileObject": { "@id": "instances-file" }, "extract": { "jsonPath": "$.difficulty" } }
+        },
+        {
+          "@type": "cr:Field",
+          "@id": "instances/prompt",
+          "name": "prompt",
+          "description": "Natural-language prompt shown to the model. Contains visible rules, initial state, and task description. Hidden rules are fully absent.",
+          "dataType": "sc:Text",
+          "source": { "fileObject": { "@id": "instances-file" }, "extract": { "jsonPath": "$.prompt" } }
+        },
+        {
+          "@type": "cr:Field",
+          "@id": "instances/hidden",
+          "name": "hidden",
+          "description": "Ground-truth data not shown to the model: full rule set, oracle scores, metacognitive labels, and scoring metadata.",
+          "dataType": "sc:Text",
+          "source": { "fileObject": { "@id": "instances-file" }, "extract": { "jsonPath": "$.hidden" } }
+        }
+      ]
+    }
+  ]
+}
