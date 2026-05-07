@@ -139,15 +139,19 @@ def fig3_heatmap(models: List[Dict], out_path: str):
     matrix = matrix[order]
     names = [names[i] for i in order]
 
-    # Extra bottom margin for the legend row
-    fig, ax = plt.subplots(figsize=(9, max(5, 0.4 * len(names) + 2.2)))
+    # Square overall figure: axes height driven by rows, width matches it
+    fig_h = max(6, 0.4 * len(names) + 2.5)
+    fig_w = fig_h
+    fig, ax = plt.subplots(figsize=(fig_w, fig_h))
     im = ax.imshow(matrix, aspect="auto", cmap="RdYlGn", vmin=0.4, vmax=1.0)
-    plt.colorbar(im, ax=ax, label="Score (0–1)", shrink=0.6)
+    cb = plt.colorbar(im, ax=ax, shrink=0.6)
+    cb.set_label("Score (0–1)", fontsize=13)
+    cb.ax.tick_params(labelsize=12)
 
     ax.set_xticks(range(len(DIMS)))
-    ax.set_xticklabels(DIM_LABELS, fontsize=10)
+    ax.set_xticklabels(DIM_LABELS, fontsize=14)
     ax.set_yticks(range(len(names)))
-    ax.set_yticklabels(names, fontsize=9)
+    ax.set_yticklabels(names, fontsize=13)
     ax.tick_params(top=True, labeltop=True, bottom=False, labelbottom=False)
 
     # Annotate cells
@@ -156,7 +160,7 @@ def fig3_heatmap(models: List[Dict], out_path: str):
             v = matrix[i, j]
             color = "white" if v < 0.55 or v > 0.85 else "black"
             ax.text(j, i, f"{v:.2f}", ha="center", va="center",
-                    fontsize=7.5, color=color)
+                    fontsize=14, fontweight="bold", color=color)
 
     # Color y-tick labels by family
     for ytick, name in zip(ax.get_yticklabels(), names):
@@ -173,7 +177,7 @@ def fig3_heatmap(models: List[Dict], out_path: str):
             seen.add(fam)
     ax.legend(handles=legend_items, loc="upper center",
               bbox_to_anchor=(0.5, -0.04), ncol=len(legend_items),
-              fontsize=8, framealpha=0.9, borderaxespad=0)
+              fontsize=13, framealpha=0.9, borderaxespad=0)
 
     fig.tight_layout()
     fig.savefig(out_path, dpi=150, bbox_inches="tight")

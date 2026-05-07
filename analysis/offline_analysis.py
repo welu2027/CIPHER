@@ -19,14 +19,23 @@ Outputs:
 Run: python3 analysis/offline_analysis.py
 """
 
-import json, math, random, sys, os
+import argparse, json, math, random, sys, os
 
 random.seed(42)
 
+_ap = argparse.ArgumentParser(add_help=False)
+_ap.add_argument("--section", type=int, default=None,
+                 help="Run only this section number (e.g. 2 for construct validity)")
+_args, _ = _ap.parse_known_args()
+_only_section = _args.section
+
 _out = open("analysis/offline_results.txt", "w", encoding="utf-8")
 _print = __builtins__.print if hasattr(__builtins__, "print") else __builtins__["print"]
+_active_section = None
 
 def print(*args, **kwargs):
+    if _only_section is not None and _active_section != _only_section:
+        return
     _print(*args, **{**kwargs, "file": _out})
     _print(*args, **{**kwargs, "file": sys.stdout})
 
@@ -54,24 +63,25 @@ FILE_MAP = {
 }
 
 PUBLIC_BENCHMARKS = {
-    # model_name: (MMLU, GPQA_Diamond, MATH_500)
-    "GPT-5.4 Nano":             (0.7717, 0.7753, None),
-    "GPT-5.4 mini":             (0.8455, 0.8308, 0.700),
-    "GPT-5.4":                  (0.8748, 0.9167, 0.847),
-    "GPT-5.5":                  (None,   None,   None),
-    "Gemini 3 Flash Preview":   (None,   None,   0.830),
-    "Gemini 3.1 Pro Preview":   (0.9099, 0.9545, 0.910),
-    "Gemini 2.5 Pro":           (None,   None,   None),
-    "Gemini 2.5 Flash":         (None,   None,   None),
-    "Claude Sonnet 4.6":        (0.8734, 0.8561, 0.820),
-    "Claude Opus 4.6":          (None,   None,   None),
-    "Claude Opus 4.5":          (None,   None,   None),
-    "Claude Opus 4.7":          (0.8987, 0.8990, 0.853),
-    "Claude 4.5 Haiku":         (0.7872, 0.7222, None),
-    "DeepSeek V3.2":            (0.8492, 0.8030, 0.883),
-    "Qwen 3 Next 80B Instruct": (None,   None,   0.869),
-    "Gemma 4 31B":              (None,   None,   0.730),
+    # model_name: (MMLU_Pro, GPQA_Diamond, MATH_500)
+    "GPT-5.4 Nano":             (0.7717, 0.7717, 0.938),
+    "GPT-5.4 mini":             (0.8455, 0.8455, 0.942),
+    "GPT-5.4":                  (0.8748, 0.9167, 0.948),
+    "GPT-5.5":                  (0.8814, 0.9318, 0.960),
+    "Gemini 3 Flash Preview":   (0.8859, None,   0.918),
+    "Gemini 3.1 Pro Preview":   (0.9099, 0.9545, 0.964),
+    "Gemini 2.5 Pro":           (0.8406, None,   0.952),
+    "Gemini 2.5 Flash":         (0.8366, None,   0.918),
+    "Claude Sonnet 4.6":        (0.8734, None,   0.938),
+    "Claude Opus 4.6":          (0.8911, 0.8965, 0.952),
+    "Claude Opus 4.5":          (0.8726, 0.8559, 0.930),
+    "Claude Opus 4.7":          (0.8987, 0.9015, 0.954),
+    "Claude 4.5 Haiku":         (0.7872, 0.7872, 0.642),
+    "DeepSeek V3.2":            (0.8492, 0.8492, 0.922),
+    "Qwen 3 Next 80B Instruct": (None,   None,   0.946),
+    "Gemma 4 31B":              (None,   None,   0.852),
 }
+
 
 DIMS = ["composite", "objective", "calibration", "attention", "executive"]
 
@@ -227,7 +237,17 @@ def spearmanr(xs, ys):
         return r
     return pearsonr(rank(xs), rank(ys))
 
+def _sec_num(title):
+    try:
+        return int(title.split(".")[0])
+    except (ValueError, IndexError):
+        return None
+
 def section(title):
+    global _active_section
+    _active_section = _sec_num(title)
+    if _only_section is not None and _active_section != _only_section:
+        return
     print()
     print("=" * 70)
     print(f"  {title}")
@@ -314,7 +334,7 @@ for name in all_model_names:
 
 section("2. CONSTRUCT VALIDITY — PEARSON r WITH PUBLIC BENCHMARKS")
 
-bench_names = ["MMLU", "GPQA_Diamond", "MATH_500"]
+bench_names = ["MMLU_Pro", "GPQA_Diamond", "MATH_500"]
 common = [n for n in PUBLIC_BENCHMARKS if n in MODEL_DATA]
 print(f"\n  Models in intersection: {len(common)}")
 print(f"  {', '.join(common)}\n")
