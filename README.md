@@ -30,24 +30,55 @@ The `data/instances.jsonl` file has everything needed to run evaluations without
 
 Each model response is scored on four dimensions, all normalized to [0, 1]:
 
-| Dimension | Weight | What it's measuring |
-|-----------|--------|---------------------|
-| **Objective** | 35% | How good is the final plan vs. the oracle beam search? |
-| **Calibration** | 25% | Brier score on the model's stated confidence in its own knowledge |
-| **Attention** | 20% | Does the model rank the important unknowns above the unimportant ones? |
-| **Executive** | 20% | Plan structure: named risks, alternative plans, probe strategy |
+| Dimension | What it's measuring |
+|-----------|---------------------|
+| **Objective** | How good is the final plan vs. the oracle beam search? |
+| **Calibration** | Brier score on the model's stated confidence in its own knowledge |
+| **Attention** | Does the model rank the important unknowns above the unimportant ones? |
+| **Executive** | Plan structure: named risks, alternative plans, probe strategy |
 
 The composite is a weighted average. One thing worth noting: no simple strategy wins all four dimensions at once. A model that always plans greedily gets a great objective score but zero attention and poor calibration. A model that hedges everywhere gets decent calibration but a bad objective. A model that genuinely reasons about what it doesn't know - and acts accordingly - is the one that scores well across the board.
 
-## Baseline scores (1,000 instances, seed=2026)
+## Quick Start
 
-| agent | composite | objective | calibration | attention | executive |
-|-------|-----------|-----------|-------------|-----------|-----------|
-| stub-noop | 0.408 | 0.486 | 0.750 | 0.000 | 0.250 |
-| stub-random | 0.511 | 0.484 | 0.663 | 0.211 | 0.670 |
-| stub-greedy | 0.623 | 1.000 | 0.893 | 0.000 | 0.250 |
+**Install dependencies**
+```bash
+pip install -r requirements.txt
+```
 
-These are floor/ceiling references, not targets. The greedy stub scores 1.0 on objective because it runs beam search on the visible rules - but it claims everything is known with high confidence and never identifies the unknowns that actually matter, so its calibration and attention are poor. Real models should do meaningfully better on the composite.
+**Run a stub baseline** (no API key needed)
+```bash
+python3 scripts/evaluate.py --data data/instances.jsonl --model stub-greedy --out results.json
+```
+
+Available built-in models: `stub-noop`, `stub-random`, `stub-greedy`, `stub-cautious`, `stub-probe-heavy`.
+
+**Run a real model**
+
+Set your API key, then pass the model flag:
+```bash
+# Claude
+export ANTHROPIC_API_KEY=your_key
+python3 scripts/evaluate.py --data data/instances.jsonl --model claude --out results.json
+
+# Gemini
+export GOOGLE_API_KEY=your_key
+python3 scripts/evaluate.py --data data/instances.jsonl --model gemini --out results.json
+```
+
+Use `--limit N` to run on a subset (e.g. `--limit 50`) before a full run.
+
+**Adding a custom model**
+
+Register a function in the `AGENTS` dict in `scripts/evaluate.py`:
+```python
+def my_agent(inst: Instance) -> dict:
+    prompt = inst.prompt  # the natural-language prompt string
+    # call your model, return a dict matching the schema in cipher/schema.py
+    ...
+
+AGENTS["my-model"] = my_agent
+```
 
 ## Regenerating the dataset
 
@@ -57,10 +88,4 @@ The included `data/instances.jsonl` is ready to use, but if you want to regenera
 python3 scripts/generate_dataset.py --n 1000 --out data/instances.jsonl --seed 2026 --oracle
 ```
 
-The `--oracle` flag pre-computes the best and worst achievable objectives for each instance (used to normalize scores). It adds ~40s for 1,000 instances.
-
-## Kaggle Benchmark
-
-This dataset is the backing store for the CIPHER Kaggle Benchmark, which evaluates frontier LLMs - Gemini, Claude, GPT-4o, and open-source models - against these instances. The benchmark notebook attaches this dataset, loads `instances.jsonl`, and runs each model through `cipher_task` via the `kaggle-benchmarks` SDK.
-
-The benchmark is part of the Measuring Progress Toward AGI hackathon, targeting the **Metacognition** track.
+The `--oracle` flag pre-computes the best and worst achievable objectives for each instance (used to normalize scores).
