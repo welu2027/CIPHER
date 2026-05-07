@@ -3,4 +3,8 @@ __pycache__/
 .venv/
 .DS_Store
 .env
+.claude/
 /analysis/results_jsons
+/analysis/offline_results.txt
+paper.txt
+writeup.md
