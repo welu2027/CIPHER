@@ -5,14 +5,10 @@ __pycache__/
 .env
 .claude/
 
-# Results and outputs
-/analysis/results_jsons/
-/analysis/models/
-/analysis/figures/
-/analysis/results.json
-/analysis/stub_cautious.json
-/analysis/stub_probe_heavy.json
-/analysis/*.txt
+# Entire analysis directory
+/analysis/
+
+# Other results
 leaderboard.json
 results_greedy.json
 results_noop.json
