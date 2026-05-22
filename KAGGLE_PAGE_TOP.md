@@ -8,17 +8,3 @@ Developed by the Feng Lab at Stevens Institute of Technology, CIPHER evaluates w
 
 Please see our [research paper](#) for further details.
 
----
-
-## Scoring
-
-Models are ranked on a composite score (0-1) across four dimensions:
-
-| Dimension | Weight | What it measures |
-|---|---|---|
-| Objective | 35% | Plan quality vs. an oracle solver |
-| Calibration | 25% | Accuracy of self-reported confidence (Brier score) |
-| Attention | 20% | Rank correlation on hidden rule importance |
-| Executive | 20% | Whether its contingency plan outperforms its primary plan under adversarial conditions |
-
-Composite = `0.35 * objective + 0.25 * calibration + 0.20 * attention + 0.20 * executive`
