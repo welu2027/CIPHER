@@ -4,7 +4,7 @@
 
 Developed by the Feng Lab at Stevens Institute of Technology, CIPHER evaluates whether LLMs know what they don't know and act on it. Models are placed in procedurally generated causal worlds with invented vocabulary (preventing memorization), where some governing rules are completely omitted from the prompt. A model must plan toward a goal, assess its own confidence in each visible rule, rank which hidden rules pose the greatest risk, and submit a contingency plan that holds under adversarial conditions. 1,000 instances across three difficulty tiers (easy: 1 hidden rule, medium: 2, hard: 3).
 
-**Motivation:** Standard calibration benchmarks only test whether a model says "I don't know." CIPHER tests whether a model can reason about the shape of its own ignorance and act on it. Our key finding: objective and executive scores are anti-correlated at r = -0.81 across frontier models, showing that planning ability and contingency quality are distinct capabilities that do not scale together.
+**Key finding:** Objective and executive scores are anti-correlated at r = -0.81 across frontier models, showing that planning ability and contingency quality are distinct capabilities that do not scale together.
 
 Please see our [research paper](#) for further details.
 
@@ -21,7 +21,17 @@ Models are ranked on a composite score (0-1) across four dimensions:
 | Attention | 20% | Rank correlation on hidden rule importance |
 | Executive | 20% | Whether its contingency plan outperforms its primary plan under adversarial conditions |
 
-The composite score is a weighted mean: `0.35 * objective + 0.25 * calibration + 0.20 * attention + 0.20 * executive`.
+Composite = `0.35 * objective + 0.25 * calibration + 0.20 * attention + 0.20 * executive`
+
+---
+
+[LEADERBOARD]
+
+---
+
+## Motivation
+
+Standard calibration benchmarks only test whether a model says "I don't know." CIPHER tests whether a model can reason about the shape of its own ignorance and act on it. Each instance uses freshly invented vocabulary so knowledge cutoff and memorization cannot inflate scores.
 
 ---
 
@@ -80,7 +90,7 @@ Each instance contains:
 
 ## Response Generation
 
-Models must return strict JSON with four fields: `metacog_assessment` (confidence per rule component), `critical_unknowns_ranked` (hidden rules by estimated impact), `exploratory_actions` (optional probes), `final_plan` (action sequence), and `self_judgment` (robustness score + named risks + contingency plan).
+Models must return strict JSON with five fields: `metacog_assessment` (confidence per rule component), `critical_unknowns_ranked` (hidden rules by estimated impact), `exploratory_actions` (optional probes), `final_plan` (action sequence), and `self_judgment` (robustness score + named risks + contingency plan).
 
 ```python
 @kbench.task(name="cipher_single_instance_scorer_v2", store_task=False)
@@ -103,25 +113,6 @@ Set `QUALITATIVE_N` to an integer (e.g. `10`) for a fast test run, or `None` for
 
 ```python
 QUALITATIVE_N = None  # set to 10 for a quick test
-
-@kbench.task(name="cipher_eval_full")
-def cipher_metacognition_evaluation(llm):
-    records_to_run = ALL_RECORDS[:QUALITATIVE_N] if QUALITATIVE_N else ALL_RECORDS
-    evaluation_df = pd.DataFrame([{
-        "prompt":      rec["prompt"],
-        "record_json": json.dumps(rec),
-    } for rec in records_to_run])
-
-    with kbench.client.enable_cache():
-        runs = cipher_single_instance_scorer.evaluate(
-            llm=[llm],
-            evaluation_data=evaluation_df,
-            n_jobs=8,
-            remove_run_files=True,
-        )
-
-    results_df = runs.as_dataframe()
-    return results_df
 
 %choose cipher_eval_full
 cipher_metacognition_evaluation.run(kbench.llm)
