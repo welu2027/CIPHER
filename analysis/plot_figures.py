@@ -3,12 +3,12 @@
 All figures are produced offline — no LLM API required.
 
 Data sources:
-  analysis/results.json       — 16-model aggregate scores (overall + by difficulty)
-  analysis/stub_cautious.json — stub-cautious per-instance scores
-  analysis/stub_probe_heavy.json — stub-probe-heavy per-instance scores
-  data/instances.jsonl        — raw instances (oracle_best, oracle_worst pre-stored)
+  results/summary.json                 — 16-model aggregate scores (overall + by difficulty)
+  results/baselines/cautious.json      — stub-cautious per-instance scores
+  results/baselines/probe_heavy.json   — stub-probe-heavy per-instance scores
+  data/instances.jsonl                 — raw instances (oracle_best, oracle_worst pre-stored)
 
-Output (written to analysis/figures/):
+Output (written to results/figures/):
   fig3_heatmap.pdf             — model × dimension heatmap (main results)
   fig4_scatter.pdf             — Objective vs Executive scatter (main claim)
   fig5_intra_family.pdf        — intra-family comparison (GPT and Claude inversions)
@@ -16,11 +16,11 @@ Output (written to analysis/figures/):
   figB_dimension_dists.pdf     — per-instance dimension distributions (appendix)
 
 Usage:
-    python analysis/plot_figures.py [--results analysis/results.json]
-        [--stub-cautious analysis/stub_cautious.json]
-        [--stub-probe-heavy analysis/stub_probe_heavy.json]
+    python analysis/plot_figures.py [--results results/summary.json]
+        [--stub-cautious results/baselines/cautious.json]
+        [--stub-probe-heavy results/baselines/probe_heavy.json]
         [--data data/instances.jsonl]
-        [--out analysis/figures]
+        [--out results/figures]
 """
 
 from __future__ import annotations
@@ -46,18 +46,20 @@ sys.path.insert(0, os.path.abspath(os.path.join(os.path.dirname(__file__), "..")
 
 HERE = os.path.dirname(__file__)
 ROOT = os.path.join(HERE, "..")
+RESULTS = os.path.join(ROOT, "results")
+BASELINES = os.path.join(RESULTS, "baselines")
 
-DEFAULT_RESULTS     = os.path.join(HERE, "results.json")
+DEFAULT_RESULTS     = os.path.join(RESULTS, "summary.json")
 DEFAULT_DATA        = os.path.join(ROOT, "data", "instances.jsonl")
-DEFAULT_OUT         = os.path.join(HERE, "figures")
+DEFAULT_OUT         = os.path.join(RESULTS, "figures")
 
 # All stub/baseline result files (name -> path relative to repo root)
 STUB_FILES: Dict[str, str] = {
-    "stub-cautious":    os.path.join(HERE, "stub_cautious.json"),
-    "stub-probe-heavy": os.path.join(HERE, "stub_probe_heavy.json"),
-    "stub-greedy":      os.path.join(ROOT, "results_greedy.json"),
-    "stub-noop":        os.path.join(ROOT, "results_noop.json"),
-    "stub-random":      os.path.join(ROOT, "results_random.json"),
+    "stub-cautious":    os.path.join(BASELINES, "cautious.json"),
+    "stub-probe-heavy": os.path.join(BASELINES, "probe_heavy.json"),
+    "stub-greedy":      os.path.join(BASELINES, "greedy.json"),
+    "stub-noop":        os.path.join(BASELINES, "noop.json"),
+    "stub-random":      os.path.join(BASELINES, "random.json"),
 }
 
 DIMS = ["composite", "objective", "calibration", "attention", "executive"]
@@ -107,7 +109,7 @@ def load_instances(path: str) -> List[Dict[str, Any]]:
 
 
 def stub_to_model_entry(stub_data: Dict, name: str) -> Dict[str, Any]:
-    """Convert stub JSON (summary + per_instance) to results.json model format."""
+    """Convert stub JSON (summary + per_instance) to summary.json model format."""
     s = stub_data["summary"]
     overall = {d: s[f"mean_{d}"] for d in DIMS}
     # Build by_difficulty from per_instance

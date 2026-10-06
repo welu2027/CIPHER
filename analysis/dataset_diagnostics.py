@@ -289,8 +289,8 @@ def main():
                     help="Use only the first N records (for quick testing)")
     ap.add_argument("--skip-sim", action="store_true",
                     help="Skip simulation-based sections (much faster)")
-    ap.add_argument("--out", default=os.path.join(os.path.dirname(__file__), "dataset_diagnostics.txt"),
-                    help="Write report to this text file (default: analysis/dataset_diagnostics.txt)")
+    ap.add_argument("--out", default=os.path.join(os.path.dirname(__file__), "..", "results", "reports", "dataset_diagnostics.txt"),
+                    help="Write report to this text file (default: results/reports/dataset_diagnostics.txt)")
     args = ap.parse_args()
 
     print(f"Loading {args.data}...")

@@ -1,8 +1,8 @@
 """
-Remove _ZERO / parse-error subruns from analysis/models/*.json in place,
+Remove _ZERO / parse-error subruns from results/models/*.json in place,
 embedding the difficulty label from instances.jsonl into each surviving
 subrun before removal so positional alignment is no longer needed.
-Then rebuilds analysis/results.json with valid-only aggregate scores.
+Then rebuilds results/summary.json with valid-only aggregate scores.
 
 A subrun is a failure if its dictResult lacks 'best_objective' or has
 parse_errors > 0.
@@ -11,8 +11,9 @@ parse_errors > 0.
 import json, os
 
 SCRIPT_DIR   = os.path.dirname(os.path.abspath(__file__))
-MODELS_DIR   = os.path.join(SCRIPT_DIR, "models")
-RESULTS_PATH = os.path.join(SCRIPT_DIR, "results.json")
+RESULTS_DIR  = os.path.join(SCRIPT_DIR, "..", "results")
+MODELS_DIR   = os.path.join(RESULTS_DIR, "models")
+RESULTS_PATH = os.path.join(RESULTS_DIR, "summary.json")
 
 INSTANCES_PATHS = [
     os.path.join(SCRIPT_DIR, "../data/instances.jsonl"),
@@ -84,7 +85,7 @@ for name, fname in FILE_MAP.items():
 
     print(f"  {name:<28}  {before} -> {after}  (removed {before - after})")
 
-    # Aggregate for results.json
+    # Aggregate for summary.json
     rows  = [s["results"][0]["dictResult"] for s in d["subruns"]]
     diffs = [r["difficulty"] for r in rows]
 

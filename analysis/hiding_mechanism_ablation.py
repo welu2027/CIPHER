@@ -25,7 +25,7 @@ Runs entirely without any LLM API.
 
 Usage:
     python analysis/hiding_mechanism_ablation.py [--data data/instances.jsonl]
-        [--n 200] [--beam 8] [--out analysis/hiding_mechanism_ablation.txt]
+        [--n 200] [--beam 8] [--out results/reports/hiding_mechanism_ablation.txt]
 """
 
 from __future__ import annotations
@@ -47,7 +47,7 @@ from cipher.schema import validate_response
 from cipher.scorer import score_response
 
 DEFAULT_DATA = os.path.join(os.path.dirname(__file__), "..", "data", "instances.jsonl")
-DEFAULT_OUT = os.path.join(os.path.dirname(__file__), "hiding_mechanism_ablation.txt")
+DEFAULT_OUT = os.path.join(os.path.dirname(__file__), "..", "results", "reports", "hiding_mechanism_ablation.txt")
 
 
 # ---------------------------------------------------------------------------

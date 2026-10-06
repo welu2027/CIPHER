@@ -220,8 +220,8 @@ def main():
                     help="Beam width for oracle computation (default 8)")
     ap.add_argument("--canonical-jsonl",
                     default=os.path.join(os.path.dirname(__file__), "..", "data", "instances.jsonl"))
-    ap.add_argument("--out", default=os.path.join(os.path.dirname(__file__), "seed_stability.txt"),
-                    help="Write report to this text file (default: analysis/seed_stability.txt)")
+    ap.add_argument("--out", default=os.path.join(os.path.dirname(__file__), "..", "results", "reports", "seed_stability.txt"),
+                    help="Write report to this text file (default: results/reports/seed_stability.txt)")
     args = ap.parse_args()
 
     all_stats: Dict[int, Dict] = {}

@@ -14,7 +14,7 @@ Runs entirely without any LLM API.
 
 Usage:
     python analysis/summary_statistics.py [--data data/instances.jsonl]
-        [--out analysis/summary_statistics.txt]
+        [--out results/reports/summary_statistics.txt]
 """
 
 from __future__ import annotations
@@ -30,7 +30,7 @@ from typing import Any, Dict, List
 sys.path.insert(0, os.path.abspath(os.path.join(os.path.dirname(__file__), "..")))
 
 DEFAULT_DATA = os.path.join(os.path.dirname(__file__), "..", "data", "instances.jsonl")
-DEFAULT_OUT  = os.path.join(os.path.dirname(__file__), "summary_statistics.txt")
+DEFAULT_OUT  = os.path.join(os.path.dirname(__file__), "..", "results", "reports", "summary_statistics.txt")
 
 DIFFICULTIES = ["easy", "medium", "hard"]
 

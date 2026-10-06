@@ -15,7 +15,7 @@ Analytical baselines — no LLM inference required.
 
 3. n_hidden ablation
    Already encoded in difficulty: easy=1 hidden, medium=2, hard=3.
-   Just reads results.json by_difficulty and formats it.
+   Just reads results/summary.json by_difficulty and formats it.
 """
 
 import json, os, random, sys
@@ -23,9 +23,10 @@ from cipher.generator import generate_instance
 from cipher.world import Action, all_actions
 
 SCRIPT_DIR   = os.path.dirname(os.path.abspath(__file__))
-MODELS_DIR   = os.path.join(SCRIPT_DIR, "models")
-OUTPUT_PATH  = os.path.join(SCRIPT_DIR, "analytical_baselines.txt")
-RESULTS_PATH = os.path.join(SCRIPT_DIR, "results.json")
+RESULTS_DIR  = os.path.join(SCRIPT_DIR, "..", "results")
+MODELS_DIR   = os.path.join(RESULTS_DIR, "models")
+OUTPUT_PATH  = os.path.join(RESULTS_DIR, "reports", "analytical_baselines.txt")
+RESULTS_PATH = os.path.join(RESULTS_DIR, "summary.json")
 
 INSTANCES_PATHS = [
     os.path.join(SCRIPT_DIR, "../data/instances.jsonl"),
@@ -130,7 +131,7 @@ print("Done.\n")
 def mean(xs): return sum(xs) / len(xs) if xs else 0.0
 
 # --------------------------------------------------------------------------
-# 3. n_hidden ablation — read results.json
+# 3. n_hidden ablation — read summary.json
 # --------------------------------------------------------------------------
 with open(RESULTS_PATH) as f:
     results = json.load(f)

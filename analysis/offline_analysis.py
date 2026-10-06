@@ -1,5 +1,5 @@
 """
-CIPHER offline analysis v3 — per-instance data from analysis/models/.
+CIPHER offline analysis v3 — per-instance data from results/models/.
 
 Each model JSON has 1000 subruns (one per instance); all bootstrap CIs and
 sign tests are computed from actual instance-level scores, not aggregates.
@@ -29,7 +29,8 @@ _ap.add_argument("--section", type=int, default=None,
 _args, _ = _ap.parse_known_args()
 _only_section = _args.section
 
-_out = open("analysis/offline_results.txt", "w", encoding="utf-8")
+_out = open(os.path.join(os.path.dirname(os.path.abspath(__file__)), "..", "results", "reports", "offline_results.txt"),
+            "w", encoding="utf-8")
 _print = __builtins__.print if hasattr(__builtins__, "print") else __builtins__["print"]
 _active_section = None
 
@@ -103,7 +104,7 @@ DIFFICULTY = [inst["difficulty"] for inst in INSTANCES]  # list of 1000
 # Load per-instance scores from each model's JSON
 # ---------------------------------------------------------------------------
 
-_jsons_dir = os.path.join(os.path.dirname(__file__), "models")
+_jsons_dir = os.path.join(os.path.dirname(__file__), "..", "results", "models")
 
 def load_per_instance(filename):
     """Return list of score dicts (one per valid instance), or None if missing/empty.

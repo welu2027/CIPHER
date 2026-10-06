@@ -314,17 +314,26 @@ AGENTS = {
 
 def main():
     ap = argparse.ArgumentParser()
-    ap.add_argument("--data", required=True)
+    ap.add_argument("--data", default="data/instances.jsonl")
     ap.add_argument("--model", default="stub-greedy", choices=list(AGENTS.keys()))
-    ap.add_argument("--out", default="results.json")
+    ap.add_argument("--out", default=None,
+                    help="Per-instance results file (default: results/baselines/<agent>.json "
+                         "for stubs, results/runs/<agent>.json otherwise).")
     ap.add_argument("--limit", type=int, default=None)
-    ap.add_argument("--leaderboard", default="leaderboard.json",
+    ap.add_argument("--leaderboard", default="results/leaderboard.json",
                     help="Aggregate file; each run appends one row.")
     ap.add_argument("--label", default=None,
                     help="Optional label for this run (e.g. HF_MODEL string).")
     ap.add_argument("--txt-out", default=None,
                     help="Also write a human-readable summary to this .txt file.")
     args = ap.parse_args()
+
+    if args.out is None:
+        if args.model.startswith("stub-"):
+            args.out = os.path.join("results", "baselines", args.model[len("stub-"):].replace("-", "_") + ".json")
+        else:
+            args.out = os.path.join("results", "runs", args.model + ".json")
+    os.makedirs(os.path.dirname(args.out), exist_ok=True)
 
     agent = AGENTS[args.model]
     results = []

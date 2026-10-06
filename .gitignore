@@ -3,4 +3,6 @@ __pycache__/
 .venv/
 .DS_Store
 .env
-/analysis/results_jsons
+
+# Ad-hoc evaluation runs (scripts/evaluate.py, notebook) — commit deliberately
+results/runs/

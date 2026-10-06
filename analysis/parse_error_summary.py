@@ -1,7 +1,7 @@
 import json, os
 from collections import Counter
 
-models_dir = os.path.join(os.path.dirname(__file__), "models")
+models_dir = os.path.join(os.path.dirname(__file__), "..", "results", "models")
 
 FILE_MAP = {
     "GPT-5.4 Nano":             "gpt_54_nano.json",
