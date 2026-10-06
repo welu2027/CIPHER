@@ -1,0 +1,17 @@
+model,spearman_nprobes_vs_objective_within_model,frac_with_probes
+Claude Opus 4.6,-0.137886,0.997683
+Claude Opus 4.5,-0.009775,1.000000
+Claude Sonnet 4.6,-0.013603,1.000000
+Claude Opus 4.7,-0.055726,0.996420
+Claude 4.5 Haiku,0.015498,1.000000
+Gemini 2.5 Pro,-0.111263,0.515483
+Gemini 2.5 Flash,-0.085148,0.447682
+Gemini 3 Flash Preview,0.053561,0.169000
+Gemini 3.1 Pro Preview,0.001968,0.001000
+GPT-5.4 Nano,-0.035803,0.985986
+GPT-5.4 mini,-0.055224,0.881000
+GPT-5.4,-0.020519,0.014768
+GPT-5.5,-0.023709,0.016000
+Qwen 3 Next 80B Instruct,-0.033134,1.000000
+DeepSeek V3.2,-0.046006,0.995000
+Gemma 4 31B,0.008214,0.041837

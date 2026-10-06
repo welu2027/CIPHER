@@ -1,0 +1,27 @@
+comparison,dimension,pairing,n_pairs,delta,ci_lo,ci_hi,d_z,win_frac,tie_frac,loss_frac,win_frac_excl_ties,sign_p_ties_dropped,delta_cal,delta_exec,d_z_exec
+GPT-5.4 mini vs GPT-5.4,composite,instance,948,0.072702,0.067821,0.077431,0.965823,0.831224,0.000000,0.168776,0.831224,0.000000,,,
+GPT-5.4 mini vs GPT-5.4,composite,positional (as published),948,0.074808,0.066449,0.083059,0.567060,0.712025,0.000000,0.287975,0.712025,0.000000,,,
+GPT-5.4 mini vs GPT-5.4,objective,instance,948,-0.004934,-0.017257,0.007201,-0.025569,0.445148,0.099156,0.455696,0.494145,0.758123,,,
+GPT-5.4 mini vs GPT-5.4,objective,positional (as published),948,-0.004073,-0.018182,0.009765,-0.018435,0.484177,0.009494,0.506329,0.488818,0.513987,,,
+GPT-5.4 mini vs GPT-5.4,calibration,instance,948,-0.010851,-0.013062,-0.008797,-0.324083,0.028481,0.061181,0.910338,0.030337,0.000000,,,
+GPT-5.4 mini vs GPT-5.4,calibration,positional (as published),948,-0.001184,-0.008544,0.006103,-0.010293,0.374473,0.154008,0.471519,0.442643,0.001298,,,
+GPT-5.4 mini vs GPT-5.4,attention,instance,948,-0.003868,-0.010197,0.002813,-0.038311,0.014768,0.958861,0.026371,0.358974,0.108129,,,
+GPT-5.4 mini vs GPT-5.4,attention,positional (as published),948,-0.006540,-0.039311,0.025600,-0.012765,0.349156,0.309072,0.341772,0.505344,0.814666,,,
+GPT-5.4 mini vs GPT-5.4,executive,instance,948,0.389575,0.374809,0.403764,1.700248,0.913502,0.031646,0.054852,0.943355,0.000000,,,
+GPT-5.4 mini vs GPT-5.4,executive,positional (as published),948,0.389190,0.374594,0.403920,1.676054,0.908228,0.028481,0.063291,0.934853,0.000000,,,
+GPT-5.4 mini vs GPT-5.4,stratum:easy,instance,242,0.085941,,,1.075385,,,,,,-0.010212,0.401714,1.707976
+GPT-5.4 mini vs GPT-5.4,stratum:medium,instance,466,0.072863,,,1.028638,,,,,,-0.010333,0.397264,1.888068
+GPT-5.4 mini vs GPT-5.4,stratum:hard,instance,240,0.059038,,,0.769643,,,,,,-0.012501,0.362406,1.420374
+Claude Sonnet 4.6 vs Claude Opus 4.7,composite,instance,792,0.028013,0.024060,0.031902,0.504267,0.685606,0.015152,0.299242,0.696154,0.000000,,,
+Claude Sonnet 4.6 vs Claude Opus 4.7,composite,positional (as published),838,0.030360,0.021510,0.039099,0.232611,0.597852,0.000000,0.402148,0.597852,0.000000,,,
+Claude Sonnet 4.6 vs Claude Opus 4.7,objective,instance,792,0.059442,0.047401,0.071272,0.344975,0.589646,0.106061,0.304293,0.659605,0.000000,,,
+Claude Sonnet 4.6 vs Claude Opus 4.7,objective,positional (as published),838,0.056888,0.042056,0.071504,0.260569,0.596659,0.008353,0.394988,0.601685,0.000000,,,
+Claude Sonnet 4.6 vs Claude Opus 4.7,calibration,instance,792,0.000145,0.000050,0.000244,0.102572,0.116162,0.734848,0.148990,0.438095,0.084254,,,
+Claude Sonnet 4.6 vs Claude Opus 4.7,calibration,positional (as published),838,0.023195,0.017785,0.028674,0.291326,0.213604,0.714797,0.071599,0.748954,0.000000,,,
+Claude Sonnet 4.6 vs Claude Opus 4.7,attention,instance,792,0.000000,0.000000,0.000000,nan,0.000000,1.000000,0.000000,nan,nan,,,
+Claude Sonnet 4.6 vs Claude Opus 4.7,attention,positional (as published),838,-0.010024,-0.044473,0.024582,-0.019593,0.350835,0.301909,0.347255,0.502564,0.934108,,,
+Claude Sonnet 4.6 vs Claude Opus 4.7,executive,instance,792,0.035862,0.024275,0.047187,0.218357,0.445707,0.261364,0.292929,0.603419,0.000001,,,
+Claude Sonnet 4.6 vs Claude Opus 4.7,executive,positional (as published),838,0.033275,0.021395,0.045225,0.191315,0.448687,0.215990,0.335322,0.572298,0.000240,,,
+Claude Sonnet 4.6 vs Claude Opus 4.7,stratum:easy,instance,214,0.023029,,,0.379441,,,,,,0.000337,0.025254,0.128247
+Claude Sonnet 4.6 vs Claude Opus 4.7,stratum:medium,instance,384,0.027472,,,0.515920,,,,,,0.000105,0.032378,0.208467
+Claude Sonnet 4.6 vs Claude Opus 4.7,stratum:hard,instance,194,0.034583,,,0.643894,,,,,,0.000011,0.054459,0.391134

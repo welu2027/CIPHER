@@ -1,0 +1,23 @@
+type,left_out,n,pearson_r,pearson_p,spearman_rho,spearman_p
+leave-one-model-out,Claude Opus 4.6,15,-0.818316,0.000192,-0.603571,0.017200
+leave-one-model-out,Claude Opus 4.5,15,-0.798005,0.000363,-0.592857,0.019846
+leave-one-model-out,Claude Sonnet 4.6,15,-0.819796,0.000183,-0.603571,0.017200
+leave-one-model-out,Claude Opus 4.7,15,-0.796945,0.000375,-0.592857,0.019846
+leave-one-model-out,Claude 4.5 Haiku,15,-0.800825,0.000334,-0.564286,0.028433
+leave-one-model-out,Gemini 2.5 Pro,15,-0.799774,0.000345,-0.475000,0.073571
+leave-one-model-out,Gemini 2.5 Flash,15,-0.801334,0.000329,-0.475000,0.073571
+leave-one-model-out,Gemini 3 Flash Preview,15,-0.786123,0.000511,-0.489286,0.064160
+leave-one-model-out,Gemini 3.1 Pro Preview,15,-0.779527,0.000611,-0.457143,0.086678
+leave-one-model-out,GPT-5.4 Nano,15,-0.793991,0.000408,-0.560714,0.029676
+leave-one-model-out,GPT-5.4 mini,15,-0.797701,0.000366,-0.564286,0.028433
+leave-one-model-out,GPT-5.4,15,-0.930064,0.000001,-0.632143,0.011458
+leave-one-model-out,GPT-5.5,15,-0.776608,0.000661,-0.457143,0.086678
+leave-one-model-out,Qwen 3 Next 80B Instruct,15,-0.796932,0.000375,-0.567857,0.027228
+leave-one-model-out,DeepSeek V3.2,15,-0.797934,0.000364,-0.567857,0.027228
+leave-one-model-out,Gemma 4 31B,15,-0.782121,0.000570,-0.471429,0.076070
+leave-one-family-out,Claude,11,-0.820464,0.001975,-0.818182,0.002083
+leave-one-family-out,DeepSeek,15,-0.797934,0.000364,-0.567857,0.027228
+leave-one-family-out,GPT,12,-0.915537,0.000029,-0.657343,0.020185
+leave-one-family-out,Gemini,12,-0.714794,0.008988,-0.104895,0.745609
+leave-one-family-out,Gemma,15,-0.782121,0.000570,-0.471429,0.076070
+leave-one-family-out,Qwen,15,-0.796932,0.000375,-0.567857,0.027228

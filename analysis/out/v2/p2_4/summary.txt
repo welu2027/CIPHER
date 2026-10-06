@@ -1,0 +1,37 @@
+== Fixed-ranking baselines (attention score) ==
+  all          att_random_expected=0.525  att_given_order=0.676  att_reverse_order=0.374
+  medium+hard  att_random_expected=0.500  att_given_order=0.701  att_reverse_order=0.299  truth_equals_given_order=0.615  impacts_all_tied=0.348  impacts_any_tie=0.504  all_impacts_zero=0.337
+  easy         att_random_expected=0.600  att_given_order=0.600  att_reverse_order=0.600  truth_equals_given_order=1.000  impacts_all_tied=0.000  all_impacts_zero=0.000
+  medium       att_random_expected=0.500  att_given_order=0.692  att_reverse_order=0.308  truth_equals_given_order=0.692  impacts_all_tied=0.394  all_impacts_zero=0.378
+  hard         att_random_expected=0.500  att_given_order=0.720  att_reverse_order=0.280  truth_equals_given_order=0.460  impacts_all_tied=0.256  all_impacts_zero=0.256
+  strict_pairs n_pairs=744  frac_earlier_label_higher_impact=0.511  binom_p=0.582
+  binomial test, earlier H-label has higher impact among strictly ordered pairs: p=0.582
+
+== Per model ==
+model                         att  given att_MH  givMH  diffMH =given =givMH =revMH   comp comp-att
+Claude Opus 4.6             0.672  0.672  0.696  0.696  +0.000   1.00   1.00   0.00  0.708    0.717
+Claude Opus 4.5             0.676  0.676  0.701  0.701  +0.000   1.00   1.00   0.00  0.694    0.698
+Claude Sonnet 4.6           0.674  0.674  0.697  0.697  +0.000   1.00   1.00   0.00  0.710    0.719
+Claude Opus 4.7             0.677  0.677  0.707  0.707  +0.000   1.00   1.00   0.00  0.684    0.686
+Claude 4.5 Haiku            0.676  0.676  0.701  0.701  +0.000   1.00   1.00   0.00  0.648    0.641
+Gemini 2.5 Pro              0.652  0.664  0.671  0.688  -0.017   0.95   0.94   0.05  0.664    0.667
+Gemini 2.5 Flash            0.654  0.659  0.675  0.680  -0.006   0.99   0.99   0.00  0.669    0.673
+Gemini 3 Flash Preview      0.676  0.676  0.701  0.701  +0.000   1.00   1.00   0.00  0.676    0.676
+Gemini 3.1 Pro Preview      0.675  0.676  0.700  0.701  -0.001   1.00   1.00   0.00  0.699    0.705
+GPT-5.4 Nano                0.645  0.676  0.660  0.701  -0.040   0.90   0.87   0.08  0.659    0.663
+GPT-5.4 mini                0.672  0.676  0.696  0.701  -0.005   0.96   0.94   0.01  0.664    0.662
+GPT-5.4                     0.677  0.677  0.703  0.703  +0.000   1.00   1.00   0.00  0.592    0.571
+GPT-5.5                     0.505  0.676  0.473  0.701  -0.228   0.57   0.42   0.56  0.645    0.680
+Qwen 3 Next 80B Instruct    0.622  0.677  0.629  0.701  -0.072   0.85   0.80   0.12  0.642    0.646
+DeepSeek V3.2               0.672  0.676  0.696  0.701  -0.005   0.97   0.96   0.02  0.663    0.661
+Gemma 4 31B                 0.676  0.676  0.701  0.701  +0.000   1.00   1.00   0.00  0.660    0.656
+stub-noop                   0.000  0.676  0.000  0.701  -0.701   0.00   0.00   0.00  0.358    0.447
+stub-greedy                 0.000  0.676  0.000  0.701  -0.701   0.00   0.00   0.00  0.473    0.591
+stub-random                 0.532  0.676  0.509  0.701  -0.192   0.53   0.38   0.40  0.520    0.518
+stub-cautious               0.676  0.676  0.701  0.701  +0.000   1.00   1.00   0.00  0.681    0.682
+stub-probe-heavy            0.676  0.676  0.701  0.701  +0.000   1.00   1.00   0.00  0.726    0.738
+
+Kendall tau (LLM ranking: composite vs composite without attention) = 0.783 (p=2.4e-06)
+Across LLMs: corr(frac identical to given order, attention on med+hard): r=+0.989 (p=5.0e-13)
+Ranking with attention:    Claude Sonnet 4.6 > Claude Opus 4.6 > Gemini 3.1 Pro Preview > Claude Opus 4.5 > Claude Opus 4.7 > Gemini 3 Flash Preview > Gemini 2.5 Flash > GPT-5.4 mini > Gemini 2.5 Pro > DeepSeek V3.2 > Gemma 4 31B > GPT-5.4 Nano > Claude 4.5 Haiku > GPT-5.5 > Qwen 3 Next 80B Instruct > GPT-5.4
+Ranking without attention: Claude Sonnet 4.6 > Claude Opus 4.6 > Gemini 3.1 Pro Preview > Claude Opus 4.5 > Claude Opus 4.7 > GPT-5.5 > Gemini 3 Flash Preview > Gemini 2.5 Flash > Gemini 2.5 Pro > GPT-5.4 Nano > GPT-5.4 mini > DeepSeek V3.2 > Gemma 4 31B > Qwen 3 Next 80B Instruct > Claude 4.5 Haiku > GPT-5.4

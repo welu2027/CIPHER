@@ -1,0 +1,7 @@
+a,b,spearman_rho,spearman_p,kendall_tau
+zero_flux,true,0.973529,0.000000,0.916667
+zero_flux,random,0.985294,0.000000,0.950000
+zero_flux,maxdmg,0.664706,0.004967,0.483333
+true,random,0.994118,0.000000,0.966667
+true,maxdmg,0.717647,0.001748,0.566667
+random,maxdmg,0.697059,0.002691,0.533333

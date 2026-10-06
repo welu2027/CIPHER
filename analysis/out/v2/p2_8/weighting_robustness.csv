@@ -1,0 +1,7 @@
+scheme,kendall_tau,kendall_p,spearman_rho,spearman_p,top_model
+default (35/25/20/20),1.000000,0.000000,1.000000,0.000000,Claude Sonnet 4.6
+equal (25/25/25/25),0.583333,0.001143,0.682353,0.003588,Claude Sonnet 4.6
+plan-heavy (50/20/15/15),0.533333,0.003341,0.623529,0.009856,Gemini 3.1 Pro Preview
+meta-heavy (20/35/25/20),0.616667,0.000515,0.761765,0.000605,Claude Sonnet 4.6
+no attention (renorm.),0.783333,0.000002,0.864706,0.000015,Claude Sonnet 4.6
+no calibration (renorm.),0.833333,0.000000,0.929412,0.000000,Claude Sonnet 4.6
