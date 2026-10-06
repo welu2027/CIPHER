@@ -80,7 +80,7 @@ def _all_claims_for(inst: Instance) -> List[Dict[str, Any]]:
     claims = []
     for gt in inst.metacog_ground_truth:
         claims.append({
-            "rule_name": gt["rule_name"],
+            "rule_name": _claim_name(inst, gt["rule_name"]),
             "component": gt["component"],
             "known": gt["true_known"],
             "confidence": 0.5,
@@ -92,9 +92,25 @@ def _hidden_labels(inst: Instance) -> List[str]:
     return [f"H{i}" for i in range(len(inst.hidden_rule_indices))]
 
 
+# How stubs name rules in metacog claims. "prompt" (default) uses only labels the
+# prompt shows: visible rules by their R-name, hidden laws as H0, H1, ... .
+# "internal" reproduces the published v1 baselines, which named hidden rules by
+# generator-internal R-names that no model is ever shown.
+STUB_LABELS = "prompt"
+
+
+def _claim_name(inst: Instance, rule_name: str) -> str:
+    if STUB_LABELS == "internal":
+        return rule_name
+    hidden_names = [inst.world.rules[i].name for i in inst.hidden_rule_indices]
+    if rule_name in hidden_names:
+        return f"H{hidden_names.index(rule_name)}"
+    return rule_name
+
+
 def stub_noop(inst: Instance) -> Dict[str, Any]:
     # Claims everything is known with low confidence - naive floor.
-    mc = [{"rule_name": gt["rule_name"], "component": gt["component"],
+    mc = [{"rule_name": _claim_name(inst, gt["rule_name"]), "component": gt["component"],
            "known": True, "confidence": 0.5}
           for gt in inst.metacog_ground_truth]
     return {
@@ -121,7 +137,7 @@ def stub_random(inst: Instance) -> Dict[str, Any]:
     rng.shuffle(shuffled_labels)
     return {
         "metacog_assessment": [
-            {"rule_name": gt["rule_name"], "component": gt["component"],
+            {"rule_name": _claim_name(inst, gt["rule_name"]), "component": gt["component"],
              "known": rng.random() > 0.5, "confidence": rng.random()}
             for gt in inst.metacog_ground_truth
         ],
@@ -149,7 +165,7 @@ def stub_cautious(inst: Instance) -> Dict[str, Any]:
     mc = []
     for gt in inst.metacog_ground_truth:
         is_known = gt["true_known"]
-        mc.append({"rule_name": gt["rule_name"], "component": gt["component"],
+        mc.append({"rule_name": _claim_name(inst, gt["rule_name"]), "component": gt["component"],
                    "known": is_known, "confidence": 0.9})
     hidden_labels = _hidden_labels(inst)
     probes = [{"kind": "observe", "i": 0}]
@@ -197,7 +213,7 @@ def stub_probe_heavy(inst: Instance) -> Dict[str, Any]:
     mc = []
     for gt in inst.metacog_ground_truth:
         is_known = gt["true_known"]
-        mc.append({"rule_name": gt["rule_name"], "component": gt["component"],
+        mc.append({"rule_name": _claim_name(inst, gt["rule_name"]), "component": gt["component"],
                    "known": is_known, "confidence": 0.9 if is_known else 0.5})
     hidden_labels = _hidden_labels(inst)
     return {
@@ -223,7 +239,7 @@ def stub_greedy(inst: Instance) -> Dict[str, Any]:
                       rules=visible_rules, horizon=inst.world.horizon)
     _, best_plan = oracle_score(visible_world)
     plan_objs = [{"kind": a.kind, "i": a.i, "j": a.j} for a in best_plan]
-    mc = [{"rule_name": gt["rule_name"], "component": gt["component"],
+    mc = [{"rule_name": _claim_name(inst, gt["rule_name"]), "component": gt["component"],
            "known": True, "confidence": 0.9}
           for gt in inst.metacog_ground_truth]
     return {

@@ -20,9 +20,10 @@ import pickle
 from collections import Counter
 
 from reanalysis_common import (
-    CACHE_DIR, DIMS, MODELS, ensure_out, instance_from_record, load_all_models,
-    load_records, parse_reply, score_response, write_csv,
+    CACHE_DIR, DIMS, MODELS, SCORER, ensure_out, instance_from_record, load_all_models,
+    load_records, parse_reply, score_fn, write_csv,
 )
+from cipher.scorer_v2 import LabelAudit
 
 # Paper Table 5 (NeurIPS submission #3009, Appendix A), transcribed from the PDF.
 # Used only as the reproduction target.
@@ -62,6 +63,7 @@ def main() -> None:
         status = Counter()
         schema_err = 0
         mismatch = Counter()
+        audit = LabelAudit()
         per = {}
         for iid, sv in saved.items():
             rec = rec_by_id[iid]
@@ -72,8 +74,8 @@ def main() -> None:
                             "scores": {d: 0.0 for d in DIMS}, "stored": sv.stored}
                 continue
             inst = instance_from_record(rec)
-            bd = score_response(parsed, inst, best_obj=rec["hidden"]["oracle_best"],
-                                worst_obj=rec["hidden"]["oracle_worst"]).to_dict()
+            bd = score_fn(parsed, inst, rec["hidden"]["oracle_best"], rec["hidden"]["oracle_worst"],
+                          audit=audit if SCORER == "v2" else None)
             if parsed.errors:
                 schema_err += 1
             for d in DIMS:
@@ -93,7 +95,11 @@ def main() -> None:
             "prompt_mojibake": sum(sv.prompt_mojibake for sv in saved.values()),
             "parse_ok": status["ok"], "parse_fail_among_saved": n_saved - status["ok"],
             "schema_errors_among_saved": schema_err,
-            "rescore_mismatch_any_dim": sum(mismatch.values()),
+            "scorer": SCORER,
+            "rescore_mismatch_vs_stored_v1_any_dim": sum(mismatch.values()),
+            **({"v2_claims": audit.claims, "v2_claims_mapped": audit.mapped,
+                "v2_duplicate_claims_dropped": audit.duplicates, "v2_label_conflicts": audit.conflicts,
+                "v2_gt_items_unanswered": audit.unmatched_gt} if SCORER == "v2" else {}),
             "kaggle_aggregate_composite_n1000": m["kaggle_aggregate"],
             "stored_sum_composite_div1000": stored_sum["composite"] / 1000,
         })
@@ -116,12 +122,13 @@ def main() -> None:
     write_csv(os.path.join(out, "inventory.csv"), inv_rows)
     write_csv(os.path.join(out, "table5_reproduction.csv"), repro_rows)
 
-    lines = ["# Part 1 - Inventory and Table 5 reproduction", "",
+    lines = [f"# Part 1 - Inventory and Table 5 reproduction (scorer {SCORER}; "
+             f"mismatch column = per-instance differences from the v1 scores stored at run time)", "",
              "| model | saved | missing | parse fail (saved) | schema-err (saved) | rescore mismatches | Kaggle agg (n=1000) | stored sum/1000 |",
              "|---|---|---|---|---|---|---|---|"]
     for r in inv_rows:
         lines.append(f"| {r['model']} | {r['saved_matched']} | {r['missing_of_1000']} | {r['parse_fail_among_saved']} | "
-                     f"{r['schema_errors_among_saved']} | {r['rescore_mismatch_any_dim']} | "
+                     f"{r['schema_errors_among_saved']} | {r['rescore_mismatch_vs_stored_v1_any_dim']} | "
                      f"{r['kaggle_aggregate_composite_n1000']:.4f} | {r['stored_sum_composite_div1000']:.4f} |")
     lines += ["", "## Table 5 reproduction (rescored from saved replies)", "",
               "| model | mode | n | comp | obj | cal | att | exec | reproduces (3dp) |", "|---|---|---|---|---|---|---|---|---|"]

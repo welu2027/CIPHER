@@ -1,4 +1,4 @@
-# Part 1 - Inventory and Table 5 reproduction
+# Part 1 - Inventory and Table 5 reproduction (scorer v1; mismatch column = per-instance differences from the v1 scores stored at run time)
 
 | model | saved | missing | parse fail (saved) | schema-err (saved) | rescore mismatches | Kaggle agg (n=1000) | stored sum/1000 |
 |---|---|---|---|---|---|---|---|

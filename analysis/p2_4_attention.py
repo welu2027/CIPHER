@@ -24,11 +24,15 @@ from collections import Counter
 import numpy as np
 
 from reanalysis_common import (
-    CACHE_DIR, MODELS, STUBS, WEIGHTS, ensure_out, instance_from_record, load_records, write_csv,
+    CACHE_DIR, MODELS, SCORER, SHARED_CACHE, STUBS, WEIGHTS, ensure_out, instance_from_record,
+    load_records, write_csv,
 )
 from reanalysis_stats import corr, fmt_p
 from cipher.generator import _oracle_plan
-from cipher.scorer import _attention
+from cipher.scorer import _attention as _attention_v1
+from cipher.scorer_v2 import attention_v2, normalized_ranking
+
+_attention = _attention_v1 if SCORER == "v1" else attention_v2
 from cipher.schema import ParsedResponse, SelfJudgment
 from cipher.world import World
 
@@ -39,7 +43,7 @@ def attention_of(ranking, inst):
 
 
 def impacts(rec_by_id):
-    cache = os.path.join(CACHE_DIR, "impacts.pkl")
+    cache = os.path.join(SHARED_CACHE, "impacts.pkl")
     if os.path.exists(cache):
         with open(cache, "rb") as f:
             return pickle.load(f)
@@ -128,7 +132,12 @@ def main():
                 continue
             nh = by_id[iid]["n_hidden"]
             labels = [f"H{i}" for i in range(nh)]
-            rk = [x.strip() for x in v["parsed"].critical_unknowns_ranked]
+            if SCORER == "v1":
+                rk = [x.strip() for x in v["parsed"].critical_unknowns_ranked]
+            else:  # normalised to hidden-rule names, mapped back to H-labels
+                inst_ = instance_from_record(rec_by_id[iid])
+                hid_names = [inst_.world.rules[i].name for i in inst_.hidden_rule_indices]
+                rk = [f"H{hid_names.index(nm)}" for nm in normalized_ranking(v["parsed"], inst_)]
             sc_ = v["scores"]
             comp_no_att = (WEIGHTS["objective"] * sc_["objective"] + WEIGHTS["calibration"] * sc_["calibration"]
                            + WEIGHTS["executive"] * sc_["executive"]) / (1 - WEIGHTS["attention"])

@@ -22,8 +22,8 @@ from collections import Counter
 import numpy as np
 
 from reanalysis_common import (
-    CACHE_DIR, MODELS, STUBS, ensure_out, instance_from_record, load_records,
-    load_stub, score_response, write_csv,
+    CACHE_DIR, MODELS, SCORER, STUBS, ensure_out, instance_from_record, load_records,
+    load_stub, score_fn, write_csv,
 )
 from reanalysis_sim import decompose_executive, parse_stub, stub_responses
 from reanalysis_stats import bootstrap_corr_ci, corr, fmt_p
@@ -42,7 +42,10 @@ def stub_scored(records):
     if os.path.exists(cache):
         with open(cache, "rb") as f:
             return pickle.load(f)
+    import evaluate  # scripts/evaluate.py (path set by stub_responses)
     agents = stub_responses()
+    # v1 reproduces the published baselines (internal rule names); v2 uses prompt labels only.
+    evaluate.STUB_LABELS = "internal" if SCORER == "v1" else "prompt"
     out = {}
     for name, agent in agents.items():
         per = {}
@@ -50,14 +53,13 @@ def stub_scored(records):
             inst = instance_from_record(rec)
             raw = agent(inst)
             parsed = parse_stub(raw)
-            bd = score_response(parsed, inst, best_obj=rec["hidden"]["oracle_best"],
-                                worst_obj=rec["hidden"]["oracle_worst"]).to_dict()
+            bd = score_fn(parsed, inst, rec["hidden"]["oracle_best"], rec["hidden"]["oracle_worst"])
             per[rec["id"]] = {"status": "ok", "parsed": parsed, "raw": raw, "scores": bd}
-        # sanity: must equal the saved baseline file
-        saved = load_stub(name)["summary"]
-        for d in ["composite", "objective", "calibration", "attention", "executive"]:
-            m = np.mean([v["scores"][d] for v in per.values()])
-            assert abs(m - saved[f"mean_{d}"]) < 1e-9, (name, d, m, saved[f"mean_{d}"])
+        if SCORER == "v1":  # sanity: v1 must equal the published baseline files
+            saved = load_stub(name)["summary"]
+            for d in ["composite", "objective", "calibration", "attention", "executive"]:
+                m = np.mean([v["scores"][d] for v in per.values()])
+                assert abs(m - saved[f"mean_{d}"]) < 1e-9, (name, d, m, saved[f"mean_{d}"])
         out[name] = per
     with open(cache, "wb") as f:
         pickle.dump(out, f)

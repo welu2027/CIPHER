@@ -31,12 +31,26 @@ from cipher.generator import Instance  # noqa: E402
 from cipher.world import World, State, EntityState, Rule, Trigger, Effect  # noqa: E402
 from cipher.schema import validate_response, ParsedResponse  # noqa: E402
 from cipher.scorer import score_response  # noqa: E402
+from cipher.scorer_v2 import score_response_v2  # noqa: E402
 
 DATA_PATH = os.path.join(ROOT, "data", "instances.jsonl")
 MODELS_DIR = os.path.join(ROOT, "results", "models")
 BASELINES_DIR = os.path.join(ROOT, "results", "baselines")
-OUT_DIR = os.path.join(HERE, "out")
-CACHE_DIR = os.path.join(OUT_DIR, "cache")
+# Scorer version: v1 = as submitted (cipher/scorer.py); v2 = label-normalised
+# calibration/attention (cipher/scorer_v2.py). Select with CIPHER_SCORER=v1|v2.
+SCORER = os.environ.get("CIPHER_SCORER", "v2")
+assert SCORER in ("v1", "v2"), SCORER
+OUT_ROOT = os.path.join(HERE, "out")
+OUT_DIR = os.path.join(OUT_ROOT, SCORER)
+SHARED_CACHE = os.path.join(OUT_ROOT, "cache")             # scorer-independent
+CACHE_DIR = os.path.join(SHARED_CACHE, SCORER)             # scorer-dependent
+
+
+def score_fn(parsed, inst, best, worst, audit=None) -> dict:
+    """Score with the selected scorer version; returns ScoreBreakdown.to_dict()."""
+    if SCORER == "v1":
+        return score_response(parsed, inst, best_obj=best, worst_obj=worst).to_dict()
+    return score_response_v2(parsed, inst, best_obj=best, worst_obj=worst, audit=audit).to_dict()
 
 DIMS = ["composite", "objective", "calibration", "attention", "executive"]
 WEIGHTS = {"objective": 0.35, "calibration": 0.25, "attention": 0.20, "executive": 0.20}
@@ -227,8 +241,8 @@ def load_model_file(name: str, prompt_to_id: Dict[str, str]) -> Dict[str, Any]:
 
 
 def load_all_models(use_cache: bool = True) -> Dict[str, Dict[str, Any]]:
-    os.makedirs(CACHE_DIR, exist_ok=True)
-    cache = os.path.join(CACHE_DIR, "models.pkl")
+    os.makedirs(SHARED_CACHE, exist_ok=True)
+    cache = os.path.join(SHARED_CACHE, "models.pkl")
     if use_cache and os.path.exists(cache):
         with open(cache, "rb") as f:
             return pickle.load(f)
@@ -248,6 +262,7 @@ def load_stub(name: str) -> Dict[str, Any]:
 def ensure_out(*parts: str) -> str:
     p = os.path.join(OUT_DIR, *parts)
     os.makedirs(p, exist_ok=True)
+    os.makedirs(CACHE_DIR, exist_ok=True)
     return p
 
 
