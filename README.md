@@ -5,23 +5,33 @@ CIPHER is a procedurally-generated benchmark designed to test whether language m
 
 The whole point is that no model can memorize its way through this. Every world uses made-up vocabulary - invented entity names, invented property words, invented causal language - generated fresh from abstract math. If a model scores well, it's because it genuinely reasoned under uncertainty, not because it pattern-matched on something from training.
 
-## What's in this dataset
+## Repository layout
 
 ```
-cipher/
-  __init__.py
-  world.py          state representation, rules, action engine
-  generator.py      procedural instance generator (seeded, fully deterministic)
-  simulator.py      executes a model's plan against the hidden rules
-  scorer.py         computes all four scoring dimensions
-  schema.py         validates and parses model JSON output
-  prompt.py         builds the natural-language prompt for each instance
-  flavor.py         procedural vocabulary layer (invented terms per instance)
-  optimal.py        beam-search oracle for computing normalized scores
+cipher/                 core library (zero runtime dependencies)
+  world.py              state representation, rules, action engine
+  generator.py          procedural instance generator (seeded, fully deterministic)
+  simulator.py          executes a model's plan against the hidden rules
+  scorer.py             computes all four scoring dimensions
+  schema.py             validates and parses model JSON output
+  prompt.py             builds the natural-language prompt for each instance
+  flavor.py             procedural vocabulary layer (invented terms per instance)
+  optimal.py            beam-search oracle for computing normalized scores
 data/
-  instances.jsonl   1,000 pre-generated instances (seed=2026, with oracle bounds)
+  instances.jsonl       1,000 pre-generated instances (seed=2026, with oracle bounds)
 scripts/
   generate_dataset.py   regenerate the benchmark at any seed/size
+  evaluate.py           run a stub baseline or model over the benchmark
+notebooks/
+  kaggle_benchmark.ipynb  Kaggle Benchmarks notebook used for the frontier-model runs
+analysis/               offline analysis scripts (stats, ablations, figures)
+results/
+  summary.json          aggregate scores for all evaluated models
+  leaderboard.json      one row per scripts/evaluate.py run
+  models/               per-instance scores for each frontier model
+  baselines/            per-instance scores for the stub baselines
+  reports/              text reports written by analysis/*.py
+  figures/              figures written by analysis/plot_figures.py
 ```
 
 The `data/instances.jsonl` file has everything needed to run evaluations without regenerating. Each line is one instance with a `prompt` field (what the model sees) and a `hidden` field (ground truth used for scoring - not shown to the model).
@@ -43,11 +53,17 @@ The composite is a weighted average. One thing worth noting: no simple strategy 
 
 | agent | composite | objective | calibration | attention | executive |
 |-------|-----------|-----------|-------------|-----------|-----------|
-| stub-noop | 0.408 | 0.486 | 0.750 | 0.000 | 0.250 |
-| stub-random | 0.511 | 0.484 | 0.663 | 0.211 | 0.670 |
-| stub-greedy | 0.623 | 1.000 | 0.893 | 0.000 | 0.250 |
+| stub-noop | 0.358 | 0.486 | 0.750 | 0.000 | 0.000 |
+| stub-greedy | 0.473 | 0.865 | 0.680 | 0.000 | 0.000 |
+| stub-random | 0.521 | 0.478 | 0.669 | 0.532 | 0.400 |
+| stub-cautious | 0.681 | 0.481 | 0.990 | 0.676 | 0.648 |
+| stub-probe-heavy | 0.726 | 0.761 | 0.897 | 0.676 | 0.500 |
 
-These are floor/ceiling references, not targets. The greedy stub scores 1.0 on objective because it runs beam search on the visible rules - but it claims everything is known with high confidence and never identifies the unknowns that actually matter, so its calibration and attention are poor. Real models should do meaningfully better on the composite.
+These are floor/ceiling references, not targets. The greedy stub gets the best objective because it runs beam search on the visible rules - but it claims everything is known and never identifies the unknowns that actually matter, so its calibration, attention and executive scores are poor. Per-instance scores live in `results/baselines/`; reproduce any row with:
+
+```bash
+python3 scripts/evaluate.py --model stub-greedy
+```
 
 ## Regenerating the dataset
 

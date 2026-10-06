@@ -1,0 +1,26 @@
+
+======================================================================
+  2. CONSTRUCT VALIDITY — PEARSON r WITH PUBLIC BENCHMARKS
+======================================================================
+
+  Models in intersection: 16
+  GPT-5.4 Nano, GPT-5.4 mini, GPT-5.4, GPT-5.5, Gemini 3 Flash Preview, Gemini 3.1 Pro Preview, Gemini 2.5 Pro, Gemini 2.5 Flash, Claude Sonnet 4.6, Claude Opus 4.6, Claude Opus 4.5, Claude Opus 4.7, Claude 4.5 Haiku, DeepSeek V3.2, Qwen 3 Next 80B Instruct, Gemma 4 31B
+
+  CIPHER dim                      MMLU_Pro              GPQA_Diamond                  MATH_500
+  --------------------------------------------------------------------------------------
+  composite        r=+0.091,ρ=+0.024(n=14)   r=-0.182,ρ=-0.345(n=10)   r=+0.190,ρ=+0.171(n=16)
+  objective        r=+0.448,ρ=+0.503(n=14)  r=+0.677,ρ=+0.733(n=10)*   r=+0.142,ρ=+0.229(n=16)
+  calibration      r=-0.083,ρ=-0.147(n=14)   r=-0.109,ρ=+0.006(n=10)   r=+0.363,ρ=+0.244(n=16)
+  attention        r=-0.217,ρ=+0.068(n=14)   r=-0.521,ρ=-0.176(n=10)   r=-0.279,ρ=-0.376(n=16)
+  executive        r=-0.309,ρ=-0.218(n=14)  r=-0.679,ρ=-0.515(n=10)*   r=-0.051,ρ=-0.035(n=16)
+
+  * p < 0.05. Both Pearson r and Spearman rho reported.
+  Low |r| with MMLU/GPQA = CIPHER measures something distinct.
+  Negative r for calibration/executive = larger models score LOWER on CIPHER.
+
+  Within-CIPHER dimension correlations across models (aggregate means):
+    calibration vs executive: r=+0.349, rho=+0.376 (p=0.188)
+    objective vs calibration: r=-0.381, rho=-0.232 (p=0.150)
+    objective vs executive: r=-0.805, rho=-0.544 (p=0.002)*
+    attention vs executive: r=+0.467, rho=+0.168 (p=0.076)
+    attention vs calibration: r=+0.253, rho=-0.038 (p=0.342)
