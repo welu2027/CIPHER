@@ -1,0 +1,8 @@
+condition,x,y,n,pearson_r,pearson_p,spearman_rho,spearman_p,shared_r_ci_lo,shared_r_ci_hi,separate_r_ci_lo,separate_r_ci_hi,diff_r_ci_lo,diff_r_ci_hi
+shared,objective,executive,16,-0.799162,0.000204,-0.555882,0.025362,,,,,,
+shared,objective,A,16,-0.771969,0.000459,-0.523529,0.037413,,,,,,
+shared,objective,B,16,-0.777235,0.000396,-0.741176,0.001018,,,,,,
+separate,objective,executive,16,-0.792860,0.000249,-0.608824,0.012315,,,,,,
+separate,objective,A,16,-0.766384,0.000535,-0.555882,0.025362,,,,,,
+separate,objective,B,16,-0.773784,0.000436,-0.826471,0.000079,,,,,,
+bootstrap_over_models,objective,executive,,,,,,-0.962705,-0.491518,-0.962844,-0.468789,-0.006781,0.028292
