@@ -12,10 +12,13 @@ and only their effects change, as in zero_flux:
                instance, seeded by (instance seed, sample), identical for all
                models; B averaged over the 20.
  (c) maxdmg    hidden effects chosen from the generator's effect space to MINIMISE
-               the final plan's objective. Exact enumeration with 1 hidden rule;
-               with 2-3 hidden rules, coordinate descent (up to 4 passes) from two
-               starts (zero_flux, true effects), best of both. Gap to exhaustive
-               search is measured on a sample of 2-hidden-rule cases.
+               the final plan's objective. Exhaustive enumeration with 1-2 hidden
+               rules (<= 60^2 worlds). With 3 hidden rules, block-coordinate
+               descent: each step jointly optimises a PAIR of hidden effects
+               exhaustively with the third fixed, cycling over the 3 pairs until no
+               improvement (<= 4 passes), from two starts (zero_flux, true effects).
+               Its gap to full exhaustive search (60^3 worlds) is measured on a
+               random sample of 3-hidden-rule cases.
 
 B under each world uses the scorer's bucket rule (0 / 0.1 / 0.3 / 0.5+gain/span,
 span = stored oracle best - worst). Executive variant = 0.5*A + 0.5*B_variant.
@@ -37,7 +40,7 @@ import numpy as np
 
 N_RANDOM = 20
 MAX_PASSES = 4
-VALIDATION_SAMPLE = 150
+VALIDATION_SAMPLE = 40
 
 _RECS = None
 
@@ -73,7 +76,7 @@ def max_damage(inst, actions, exact=False):
     from cipher.world import Effect
     hidden = list(inst.hidden_rule_indices)
     space = effect_space(inst.world.initial.n)
-    if exact or len(hidden) == 1:
+    if exact or len(hidden) <= 2:
         best_v, best_e = None, None
         for combo in itertools.product(space, repeat=len(hidden)):
             e = dict(zip(hidden, combo))
@@ -91,9 +94,9 @@ def max_damage(inst, actions, exact=False):
         val, _ = _obj(inst, cur, actions)
         for _ in range(MAX_PASSES):
             improved = False
-            for i in hidden:
-                for e in space:
-                    cand = {**cur, i: e}
+            for i, j in itertools.combinations(hidden, 2):
+                for ei, ej in itertools.product(space, repeat=2):
+                    cand = {**cur, i: ei, j: ej}
                     v, _ = _obj(inst, cand, actions)
                     if v < val:
                         val, cur, improved = v, cand, True
@@ -161,7 +164,7 @@ def work(job):
 
 
 def validate(job):
-    """Coordinate descent vs exhaustive search on 2-hidden-rule cases."""
+    """Block-coordinate descent vs exhaustive search on 3-hidden-rule cases."""
     from cipher.world import Action
     from reanalysis_common import instance_from_record
     from reanalysis_sim import combined
@@ -211,9 +214,9 @@ def main():
         with ProcessPoolExecutor(max_workers=os.cpu_count(), initializer=_init) as ex:
             for name, part in ex.map(work, jobs):
                 res[name].update(part)
-            # validation sample: 2-hidden-rule (medium) cases from all LLMs
+            # validation sample: 3-hidden-rule (hard) cases from all LLMs
             _init()
-            med = [it for n in MODELS for it in _items(scored[n]) if _RECS[it[0]]["difficulty"] == "medium"]
+            med = [it for n in MODELS for it in _items(scored[n]) if _RECS[it[0]]["difficulty"] == "hard"]
             rng = random.Random(42)
             sample = rng.sample(med, min(VALIDATION_SAMPLE, len(med)))
             gaps = [g for part in ex.map(validate, [sample[i::os.cpu_count()] for i in range(os.cpu_count())]) for g in part]
@@ -261,7 +264,7 @@ def main():
         print(s)
         lines.append(s)
     g = np.array(gaps)
-    p(f"Max-damage validation (coordinate descent vs exhaustive, {len(g)} two-hidden-rule cases): "
+    p(f"Max-damage validation (block-coordinate descent vs exhaustive, {len(g)} three-hidden-rule cases): "
       f"exact match {np.mean(g == 0):.1%}, mean gap {g.mean():.3f} objective points, max gap {g.max() if len(g) else 0}")
     p(f"\n{'model':26s} {'obj':>6} {'A':>6} | {'B_zf':>6} {'B_true':>6} {'B_rand':>6} {'B_maxd':>6} | "
       f"{'beat_true':>9} {'beat_rand':>9} {'beat_maxd':>9}")
