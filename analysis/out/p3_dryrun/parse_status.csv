@@ -1,0 +1,17 @@
+model,file,n_lines,status_missing_in_original,status_ok
+Claude 4.5 Haiku,separate_budget__anthropic-claude-haiku-4-5@20251001.jsonl,333,1,332
+Claude Opus 4.5,separate_budget__anthropic-claude-opus-4-5@20251101.jsonl,333,,333
+Claude Opus 4.6,separate_budget__anthropic-claude-opus-4-6@default.jsonl,333,36,297
+Claude Opus 4.7,separate_budget__anthropic-claude-opus-4-7@default.jsonl,333,58,275
+Claude Sonnet 4.6,separate_budget__anthropic-claude-sonnet-4-6@default.jsonl,333,15,318
+DeepSeek V3.2,separate_budget__deepseek-ai-deepseek-v3.2.jsonl,333,,333
+Gemini 2.5 Flash,separate_budget__google-gemini-2.5-flash.jsonl,333,81,252
+Gemini 2.5 Pro,separate_budget__google-gemini-2.5-pro.jsonl,333,154,179
+Gemini 3 Flash Preview,separate_budget__google-gemini-3-flash-preview.jsonl,333,,333
+Gemini 3.1 Pro Preview,separate_budget__google-gemini-3.1-pro-preview.jsonl,333,,333
+Gemma 4 31B,separate_budget__google-gemma-4-31b.jsonl,333,7,326
+GPT-5.4,separate_budget__openai-gpt-5.4-2026-03-05.jsonl,333,19,314
+GPT-5.4 mini,separate_budget__openai-gpt-5.4-mini-2026-03-17.jsonl,333,,333
+GPT-5.4 Nano,separate_budget__openai-gpt-5.4-nano-2026-03-17.jsonl,333,,333
+GPT-5.5,separate_budget__openai-gpt-5.5-2026-04-23.jsonl,333,,333
+Qwen 3 Next 80B Instruct,separate_budget__qwen-qwen3-next-80b-a3b-instruct.jsonl,333,18,315
