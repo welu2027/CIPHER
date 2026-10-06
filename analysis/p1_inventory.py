@@ -23,7 +23,7 @@ from reanalysis_common import (
     CACHE_DIR, DIMS, MODELS, SCORER, ensure_out, instance_from_record, load_all_models,
     load_records, parse_reply, score_fn, write_csv,
 )
-from cipher.scorer_v2 import LabelAudit
+from cipher.scorer_v2 import CONFIDENCE_RULES, LabelAudit, calibration_v2
 
 # Paper Table 5 (NeurIPS submission #3009, Appendix A), transcribed from the PDF.
 # Used only as the reproduction target.
@@ -119,6 +119,17 @@ def main() -> None:
 
     with open(os.path.join(CACHE_DIR, "scored.pkl"), "wb") as f:
         pickle.dump(scored, f)
+
+    if SCORER == "v2":  # sensitivity of calibration to the confidence reading
+        sem_rows = []
+        for name in MODELS:
+            row = {"model": name}
+            for rule in CONFIDENCE_RULES:
+                vals = [calibration_v2(v["parsed"], instance_from_record(rec_by_id[i]), confidence_rule=rule)
+                        for i, v in scored[name].items() if v["parsed"] is not None]
+                row[f"calibration_{rule}"] = sum(vals) / len(vals)
+            sem_rows.append(row)
+        write_csv(os.path.join(out, "calibration_confidence_semantics.csv"), sem_rows)
     write_csv(os.path.join(out, "inventory.csv"), inv_rows)
     write_csv(os.path.join(out, "table5_reproduction.csv"), repro_rows)
 

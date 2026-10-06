@@ -42,8 +42,8 @@ def stub_scored(records):
     if os.path.exists(cache):
         with open(cache, "rb") as f:
             return pickle.load(f)
-    import evaluate  # scripts/evaluate.py (path set by stub_responses)
-    agents = stub_responses()
+    agents = stub_responses()  # also puts scripts/ on sys.path
+    import evaluate  # scripts/evaluate.py
     # v1 reproduces the published baselines (internal rule names); v2 uses prompt labels only.
     evaluate.STUB_LABELS = "internal" if SCORER == "v1" else "prompt"
     out = {}

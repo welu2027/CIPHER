@@ -21,6 +21,20 @@ disagree, the R-name wins (counted in `label_conflicts`). After normalisation,
 only the FIRST claim per (rule, component) is scored, so duplicates (e.g. a
 model writing both "R0" and "α") cannot count twice.
 
+Confidence semantics. The response schema gives `known` (bool) and
+`confidence` (0-1) without saying what confidence refers to. v1 read it as
+confidence in the stated claim, so P(known) = 1 - confidence when known=false.
+In the saved responses every model marks hidden-rule components known=false
+with confidence near 0 (median 0.00-0.20), i.e. they use confidence as "how much
+I know this"; under v1's reading that is scored as P(known) ~ 1, the maximum
+penalty for a correct answer. v2 therefore lets the boolean set the side and
+the confidence set the distance from 0.5:
+    P(known) = 0.5 + |confidence - 0.5|   if known
+               0.5 - |confidence - 0.5|   if not known
+which agrees with both readings whenever they agree with the boolean and never
+contradicts the stated `known`. CONFIDENCE_RULES also exposes "literal" (v1)
+and "pknown" (P(known) = confidence) for sensitivity analysis.
+
 Everything else is unchanged from v1: Brier-based calibration with a 0.25
 penalty per missing (rule, component), the attention concordance rule
 (including its partial-credit and tie conventions), objective, and executive.
@@ -103,7 +117,20 @@ class LabelAudit:
     unmatched_gt: int = 0
 
 
-def calibration_v2(resp: ParsedResponse, inst: Instance, audit: Optional[LabelAudit] = None) -> float:
+def p_known(known: bool, confidence: float, rule: str = "symmetric") -> float:
+    if rule == "literal":      # v1
+        return confidence if known else 1.0 - confidence
+    if rule == "pknown":
+        return confidence
+    d = abs(confidence - 0.5)  # "symmetric" (v2 default)
+    return 0.5 + d if known else 0.5 - d
+
+
+CONFIDENCE_RULES = ("symmetric", "literal", "pknown")
+
+
+def calibration_v2(resp: ParsedResponse, inst: Instance, audit: Optional[LabelAudit] = None,
+                   confidence_rule: str = "symmetric") -> float:
     gt = {(g["rule_name"], g["component"]): g["true_known"] for g in inst.metacog_ground_truth}
     if not gt:
         return 1.0
@@ -126,8 +153,7 @@ def calibration_v2(resp: ParsedResponse, inst: Instance, audit: Optional[LabelAu
         if audit:
             audit.mapped += 1
         truth = 1.0 if gt[key] else 0.0
-        p_known = c.confidence if c.known else 1.0 - c.confidence
-        sq.append((p_known - truth) ** 2)
+        sq.append((p_known(c.known, c.confidence, confidence_rule) - truth) ** 2)
     missing = len([k for k in gt if k not in seen])
     if audit:
         audit.unmatched_gt += missing
