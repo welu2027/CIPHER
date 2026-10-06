@@ -1,0 +1,106 @@
+Common instances answered by all 16 models: 325
+
+== Inter-dimension correlations over models ==
+[valid_only      ]   objective~calibration r=-0.381 p=  0.145 boot95[-0.75,+0.10]  rho=-0.232 p=  0.387   paper: r=-0.38, p=0.15
+[valid_only      ]   objective~attention   r=-0.596 p=  0.015 boot95[-0.88,+0.20]  rho=-0.243 p=  0.365   paper: 
+[valid_only      ]   objective~executive   r=-0.805 p=1.7e-04 boot95[-0.97,-0.49]  rho=-0.544 p=  0.029   paper: r=-0.81, rho=-0.54, p=0.002 (Sec 6.4); r=-0.80 (Fig 3 caption)
+[valid_only      ] calibration~attention   r=+0.253 p=  0.345 boot95[-0.41,+0.60]  rho=-0.054 p=  0.841   paper: 
+[valid_only      ] calibration~executive   r=+0.349 p=  0.185 boot95[-0.14,+0.72]  rho=+0.376 p=  0.151   paper: r=+0.35, p=0.19
+[valid_only      ]   attention~executive   r=+0.467 p=  0.068 boot95[-0.20,+0.82]  rho=+0.152 p=  0.575   paper: r=+0.47, p=0.076
+[missing_as_zero ]   objective~calibration r=+0.238 p=  0.375 boot95[-0.41,+0.57]  rho=+0.003 p=  0.991   paper: r=-0.38, p=0.15
+[missing_as_zero ]   objective~attention   r=+0.128 p=  0.638 boot95[-0.55,+0.63]  rho=+0.181 p=  0.502   paper: 
+[missing_as_zero ]   objective~executive   r=-0.564 p=  0.023 boot95[-0.91,-0.04]  rho=-0.250 p=  0.350   paper: r=-0.81, rho=-0.54, p=0.002 (Sec 6.4); r=-0.80 (Fig 3 caption)
+[missing_as_zero ] calibration~attention   r=+0.809 p=1.5e-04 boot95[+0.24,+0.94]  rho=+0.527 p=  0.036   paper: 
+[missing_as_zero ] calibration~executive   r=+0.419 p=  0.106 boot95[+0.00,+0.71]  rho=+0.450 p=  0.080   paper: r=+0.35, p=0.19
+[missing_as_zero ]   attention~executive   r=+0.456 p=  0.076 boot95[+0.02,+0.80]  rho=+0.447 p=  0.082   paper: r=+0.47, p=0.076
+[common_instances]   objective~calibration r=-0.412 p=  0.113 boot95[-0.77,+0.06]  rho=-0.406 p=  0.119   paper: r=-0.38, p=0.15
+[common_instances]   objective~attention   r=-0.579 p=  0.019 boot95[-0.87,+0.30]  rho=-0.327 p=  0.217   paper: 
+[common_instances]   objective~executive   r=-0.803 p=1.8e-04 boot95[-0.97,-0.48]  rho=-0.547 p=  0.028   paper: r=-0.81, rho=-0.54, p=0.002 (Sec 6.4); r=-0.80 (Fig 3 caption)
+[common_instances] calibration~attention   r=+0.283 p=  0.289 boot95[-0.38,+0.62]  rho=-0.024 p=  0.931   paper: 
+[common_instances] calibration~executive   r=+0.358 p=  0.174 boot95[-0.13,+0.73]  rho=+0.435 p=  0.092   paper: r=+0.35, p=0.19
+[common_instances]   attention~executive   r=+0.450 p=  0.080 boot95[-0.26,+0.79]  rho=+0.322 p=  0.224   paper: r=+0.47, p=0.076
+[valid_only      ] excl. Gemini 2.5 Pro: obj~exec r=-0.800 p=3.4e-04 rho=-0.475 p=0.074
+[missing_as_zero ] excl. Gemini 2.5 Pro: obj~exec r=-0.732 p=0.002 rho=-0.371 p=0.173
+[common_instances] excl. Gemini 2.5 Pro: obj~exec r=-0.798 p=3.6e-04 rho=-0.482 p=0.069
+
+== Objective~Executive leave-out (valid_only) ==
+leave-one-model-out: Pearson r range [-0.930, -0.777], max p=6.6e-04; Spearman rho range [-0.632, -0.457], max p=0.087
+leave-one-family-out: Pearson r range [-0.916, -0.715], max p=0.009; Spearman rho range [-0.818, -0.105], max p=0.746
+   drop Claude    n=11 r=-0.820 (p=0.002) rho=-0.818 (p=0.002)
+   drop DeepSeek  n=15 r=-0.798 (p=3.6e-04) rho=-0.568 (p=0.027)
+   drop GPT       n=12 r=-0.916 (p=2.9e-05) rho=-0.657 (p=0.020)
+   drop Gemini    n=12 r=-0.715 (p=0.009) rho=-0.105 (p=0.746)
+   drop Gemma     n=15 r=-0.782 (p=5.7e-04) rho=-0.471 (p=0.076)
+   drop Qwen      n=15 r=-0.797 (p=3.7e-04) rho=-0.568 (p=0.027)
+
+== Table 4 recomputed (paired by instance id; bootstrap 10k, seed 42; sign test drops ties) ==
+GPT-5.4 mini vs GPT-5.4: instance-paired n=948; positional zip n=948 with 939 mismatched instance pairs
+   composite   INSTANCE Δ=+0.075 [+0.070,+0.080] win= 82% tie=  0% loss= 18% dz=+0.95 sign-p=1.7e-95  | POSITIONAL Δ=+0.075 [+0.066,+0.083] win= 71% dz=+0.57
+   objective   INSTANCE Δ=-0.005 [-0.017,+0.007] win= 45% tie= 10% loss= 46% dz=-0.03 sign-p=0.758  | POSITIONAL Δ=-0.004 [-0.018,+0.010] win= 48% dz=-0.02
+   calibration INSTANCE Δ=-0.001 [-0.008,+0.005] win= 23% tie= 27% loss= 50% dz=-0.01 sign-p=1.1e-21  | POSITIONAL Δ=-0.001 [-0.009,+0.006] win= 37% dz=-0.01
+   attention   INSTANCE Δ=-0.004 [-0.010,+0.003] win=  1% tie= 96% loss=  3% dz=-0.04 sign-p=0.108  | POSITIONAL Δ=-0.007 [-0.039,+0.026] win= 35% dz=-0.01
+   executive   INSTANCE Δ=+0.390 [+0.375,+0.404] win= 91% tie=  3% loss=  5% dz=+1.70 sign-p=3.2e-191  | POSITIONAL Δ=+0.389 [+0.375,+0.404] win= 91% dz=+1.68
+   [easy   n=242] ΔComp=+0.085 dz=+0.98  ΔCal=-0.015  ΔExec=+0.402 dz=+1.71
+   [medium n=466] ΔComp=+0.076 dz=+1.02  ΔCal=+0.002  ΔExec=+0.397 dz=+1.89
+   [hard   n=240] ΔComp=+0.064 dz=+0.80  ΔCal=+0.006  ΔExec=+0.362 dz=+1.42
+Claude Sonnet 4.6 vs Claude Opus 4.7: instance-paired n=792; positional zip n=838 with 836 mismatched instance pairs
+   composite   INSTANCE Δ=+0.034 [+0.030,+0.038] win= 72% tie=  2% loss= 27% dz=+0.57 sign-p=7.1e-39  | POSITIONAL Δ=+0.030 [+0.022,+0.039] win= 60% dz=+0.23
+   objective   INSTANCE Δ=+0.059 [+0.047,+0.071] win= 59% tie= 11% loss= 30% dz=+0.34 sign-p=1.5e-17  | POSITIONAL Δ=+0.057 [+0.042,+0.072] win= 60% dz=+0.26
+   calibration INSTANCE Δ=+0.023 [+0.018,+0.029] win= 21% tie= 71% loss=  8% dz=+0.28 sign-p=2.3e-13  | POSITIONAL Δ=+0.023 [+0.018,+0.029] win= 21% dz=+0.29
+   attention   INSTANCE Δ=+0.000 [+0.000,+0.000] win=  0% tie=100% loss=  0% dz=+nan sign-p=n/a  | POSITIONAL Δ=-0.010 [-0.044,+0.025] win= 35% dz=-0.02
+   executive   INSTANCE Δ=+0.036 [+0.024,+0.047] win= 45% tie= 26% loss= 29% dz=+0.22 sign-p=6.4e-07  | POSITIONAL Δ=+0.033 [+0.021,+0.045] win= 45% dz=+0.19
+   [easy   n=214] ΔComp=+0.038 dz=+0.59  ΔCal=+0.060  ΔExec=+0.025 dz=+0.13
+   [medium n=384] ΔComp=+0.030 dz=+0.53  ΔCal=+0.011  ΔExec=+0.032 dz=+0.21
+   [hard   n=194] ΔComp=+0.037 dz=+0.66  ΔCal=+0.008  ΔExec=+0.054 dz=+0.39
+
+== By difficulty (correct labels): composite E/M/H, objective E-H delta ==
+   Claude Opus 4.6            comp 0.692/0.683/0.678  obj Δ(E-H)=+0.070  n=216/436/211
+   Claude Opus 4.5            comp 0.662/0.665/0.662  obj Δ(E-H)=-0.015  n=250/500/250
+   Claude Sonnet 4.6          comp 0.660/0.657/0.657  obj Δ(E-H)=+0.025  n=228/483/237
+   Claude Opus 4.7            comp 0.623/0.630/0.620  obj Δ(E-H)=+0.048  n=236/399/203
+   Claude 4.5 Haiku           comp 0.595/0.607/0.610  obj Δ(E-H)=+0.015  n=248/497/250
+   Gemini 2.5 Pro             comp 0.653/0.645/0.628  obj Δ(E-H)=+0.098  n=149/267/133
+   Gemini 2.5 Flash           comp 0.611/0.621/0.616  obj Δ(E-H)=+0.056  n=197/382/176
+   Gemini 3 Flash Preview     comp 0.632/0.626/0.614  obj Δ(E-H)=+0.112  n=250/500/250
+   Gemini 3.1 Pro Preview     comp 0.638/0.621/0.607  obj Δ(E-H)=+0.091  n=250/500/250
+   GPT-5.4 Nano               comp 0.638/0.633/0.624  obj Δ(E-H)=+0.013  n=250/499/250
+   GPT-5.4 mini               comp 0.639/0.628/0.619  obj Δ(E-H)=+0.051  n=250/500/250
+   GPT-5.4                    comp 0.554/0.553/0.556  obj Δ(E-H)=+0.010  n=242/466/240
+   GPT-5.5                    comp 0.619/0.586/0.555  obj Δ(E-H)=+0.084  n=250/500/250
+   Qwen 3 Next 80B Instruct   comp 0.611/0.622/0.618  obj Δ(E-H)=+0.010  n=230/479/237
+   DeepSeek V3.2              comp 0.602/0.607/0.606  obj Δ(E-H)=+0.033  n=250/500/250
+   Gemma 4 31B                comp 0.608/0.607/0.591  obj Δ(E-H)=+0.081  n=242/490/248
+
+== Appendix B: construct validity (valid_only model means; * = p<0.05, marked on r and rho independently) ==
+   composite   MMLU-Pro(n=14): r=+0.09 [-0.46,+0.59] p=0.756; rho=+0.02 p=0.935 | GPQA(n=10): r=-0.18 [-0.73,+0.51] p=0.616; rho=-0.35 p=0.328 | MATH-500(n=16): r=+0.19 [-0.34,+0.63] p=0.480; rho=+0.17 p=0.534
+   objective   MMLU-Pro(n=14): r=+0.45 [-0.11,+0.79] p=0.108; rho=+0.50 p=0.067 | GPQA(n=10): r=+0.68* [+0.08,+0.92] p=0.031; rho=+0.73* p=0.016 | MATH-500(n=16): r=+0.14 [-0.38,+0.60] p=0.599; rho=+0.23 p=0.392
+   calibration MMLU-Pro(n=14): r=-0.08 [-0.59,+0.47] p=0.778; rho=-0.15 p=0.615 | GPQA(n=10): r=-0.11 [-0.69,+0.56] p=0.765; rho=+0.01 p=0.987 | MATH-500(n=16): r=+0.36 [-0.16,+0.73] p=0.167; rho=+0.24 p=0.376
+   attention   MMLU-Pro(n=14): r=-0.22 [-0.67,+0.35] p=0.456; rho=+0.08 p=0.794 | GPQA(n=10): r=-0.52 [-0.87,+0.16] p=0.123; rho=-0.18 p=0.627 | MATH-500(n=16): r=-0.28 [-0.68,+0.25] p=0.295; rho=-0.38 p=0.148
+   executive   MMLU-Pro(n=14): r=-0.31 [-0.72,+0.27] p=0.283; rho=-0.22 p=0.455 | GPQA(n=10): r=-0.68* [-0.92,-0.09] p=0.031; rho=-0.52 p=0.128 | MATH-500(n=16): r=-0.05 [-0.53,+0.46] p=0.851; rho=-0.05 p=0.845
+   WARNING: GPQA == MMLU-Pro exactly for 4 models: Claude 4.5 Haiku, GPT-5.4 Nano, GPT-5.4 mini, DeepSeek V3.2
+
+== Weighting robustness (valid_only; Kendall tau and Spearman vs default ranking) ==
+   default (35/25/20/20)      tau=+1.000 (p=9.6e-14)  rho=+1.000 (p=0.0e+00)  top=Claude Opus 4.6
+   equal (25/25/25/25)        tau=+0.750 (p=8.9e-06)  rho=+0.882 (p=6.1e-06)  top=Claude Opus 4.6
+   plan-heavy (50/20/15/15)   tau=+0.333 (p=0.079)  rho=+0.441 (p=0.087)  top=Gemini 3.1 Pro Preview
+   meta-heavy (20/35/25/20)   tau=+0.733 (p=1.6e-05)  rho=+0.865 (p=1.5e-05)  top=Claude Opus 4.6
+   no attention (renorm.)     tau=+0.817 (p=5.5e-07)  rho=+0.918 (p=5.5e-07)  top=Claude Opus 4.6
+   no calibration (renorm.)   tau=+0.683 (p=8.3e-05)  rho=+0.868 (p=1.3e-05)  top=Claude Sonnet 4.6
+
+== Sec 5.1 / 6.4: distance of objective from the no-op floor (0.480) ==
+   DeepSeek V3.2              obj=0.478  Δfloor=-0.002  within 0.04
+   Qwen 3 Next 80B Instruct   obj=0.483  Δfloor=+0.003  within 0.04
+   GPT-5.4 mini               obj=0.485  Δfloor=+0.005  within 0.04
+   GPT-5.4 Nano               obj=0.488  Δfloor=+0.008  within 0.04
+   GPT-5.4                    obj=0.490  Δfloor=+0.010  within 0.04
+   Claude 4.5 Haiku           obj=0.500  Δfloor=+0.020  within 0.04
+   Claude Opus 4.5            obj=0.503  Δfloor=+0.023  within 0.04
+   Claude Opus 4.7            obj=0.506  Δfloor=+0.026  within 0.04
+   Claude Sonnet 4.6          obj=0.563  Δfloor=+0.083  NOT within 0.04
+   Claude Opus 4.6            obj=0.566  Δfloor=+0.086  NOT within 0.04
+   Gemini 2.5 Flash           obj=0.654  Δfloor=+0.174  NOT within 0.04
+   Gemini 2.5 Pro             obj=0.669  Δfloor=+0.189  NOT within 0.04
+   Gemma 4 31B                obj=0.737  Δfloor=+0.257  NOT within 0.04
+   Gemini 3 Flash Preview     obj=0.749  Δfloor=+0.269  NOT within 0.04
+   GPT-5.5                    obj=0.765  Δfloor=+0.285  NOT within 0.04
+   Gemini 3.1 Pro Preview     obj=0.853  Δfloor=+0.373  NOT within 0.04

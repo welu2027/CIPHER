@@ -1,0 +1,5 @@
+# Re-analysis (analysis/run_reanalysis.py). The cipher package itself needs none of these.
+numpy>=2.0
+scipy>=1.13
+pandas>=2.2
+matplotlib>=3.9
